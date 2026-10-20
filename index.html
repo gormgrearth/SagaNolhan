@@ -166,8 +166,10 @@ const mk=(t,o)=>({id:'b'+uid(),t,text:'',...o});
 function imgPick(l,o,k,W,H,ns){
   const w=E('label','',esc(l)),f=E('input'),th=E('img','th');f.type='file';f.accept='image/*';th.hidden=!o[k];
   if(o[k])img(o[k]).then(d=>th.src=d);
-  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]),W,H,ns&&ns());th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
-  w.append(f,th);return w;
+  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]),W,H,ns&&ns());th.hidden=false;rm.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
+  const rm=E('button','mini','Retirer l’image');rm.type='button';rm.hidden=!o[k];
+  rm.onclick=()=>{o[k]='';f.value='';th.hidden=true;th.removeAttribute('src');rm.hidden=true;toast('Image retirée : pensez à enregistrer')};
+  w.append(f,th,rm);return w;
 }
 function parse(raw){
   const out=[];let buf=[];
@@ -192,8 +194,7 @@ function adminHome(){
   sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
-  const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked),rm=E('button','mini','Retirer le fond');
-  rm.onclick=()=>{meta.fond='';fw.querySelector('.th').hidden=true;toast('Fond retiré : pensez à enregistrer')};fw.append(rm);
+  const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
   s.append(a,b,c,d,cw,fw,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
