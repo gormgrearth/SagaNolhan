@@ -20,6 +20,9 @@ a{color:inherit;text-decoration:none}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
 footer{text-align:center;color:var(--mut);padding:20px}
+#fond{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat;opacity:0;transition:opacity .6s}#fond.on{opacity:1}
+#fond::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.6}
+.hero h1,.intro{text-shadow:0 2px 12px var(--bg)}
 .bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--line);z-index:5}
 .bar select,.bar button{font:inherit;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 8px;max-width:45vw}
 article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs);line-height:1.65}
@@ -45,6 +48,7 @@ dialog input{width:100%;font:inherit;padding:6px 8px;margin:4px 0 8px;border:1px
 </style>
 </head>
 <body>
+<div id="fond"></div>
 <div id="app"></div>
 <div id="adm" hidden></div>
 <button id="gear" title="Administration" aria-label="Administration">⚙</button>
@@ -86,8 +90,8 @@ const imgs=new Map();
 const img=id=>{if(!id)return Promise.resolve('');if(!imgs.has(id))imgs.set(id,getDoc(doc(db,'images',id)).then(s=>s.exists()?s.data().d:'').catch(()=>''));return imgs.get(id)};
 const setBg=async(el,id)=>{const d=await img(id);if(d)el.style.backgroundImage=`url(${d})`};
 const readFile=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
-const shrink=src=>new Promise(ok=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1400/i.width,2100/i.height),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}ok(d)};i.src=src});
-async function upload(src){const d=await shrink(src),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
+const shrink=(src,W=1400,H=2100)=>new Promise(ok=>{const i=new Image();i.onload=()=>{const s=Math.min(1,W/i.width,H/i.height),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}ok(d)};i.src=src});
+async function upload(src,W,H){const d=await shrink(src,W,H),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
 
 /* ---------- chargement ---------- */
 async function load(){
@@ -102,6 +106,7 @@ async function load(){
 function home(){
   document.title=meta.serie||'La saga';
   app.innerHTML=`<header class="hero"><h1 class="gold">${esc(meta.serie||'La saga')}</h1><div class="orn">♛</div><p class="intro">${esc(meta.intro||'')}</p></header><div class="grid" id="grid"></div><footer>${esc([meta.auteur,meta.edition].filter(Boolean).join(' — '))}</footer>`;
+  const fd=$('#fond');if(meta.fond)img(meta.fond).then(d=>{if(d&&location.hash.indexOf('#/t/')!==0){fd.style.backgroundImage=`url(${d})`;fd.classList.add('on')}});
   const g=$('#grid');
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
   tomes.forEach(t=>{
@@ -132,16 +137,16 @@ async function read(id){
   const k='pos-'+id;setTimeout(()=>scrollTo(0,+localStorage.getItem(k)||0),120);
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
-function route(){window.onscroll=null;const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);m?read(m[1]):home()}
+function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);m?read(m[1]):home()}
 window.onhashchange=route;
 
 /* ---------- administration ---------- */
 const F=(l,v,tag='input')=>{const w=E('label','',esc(l)),i=E(tag);i.value=v??'';w.append(i);return[w,i]};
 const mk=(t,o)=>({id:'b'+uid(),t,text:'',...o});
-function imgPick(l,o,k){
+function imgPick(l,o,k,W,H){
   const w=E('label','',esc(l)),f=E('input'),th=E('img','th');f.type='file';f.accept='image/*';th.hidden=!o[k];
   if(o[k])img(o[k]).then(d=>th.src=d);
-  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]));th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
+  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]),W,H);th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
   w.append(f,th);return w;
 }
 function parse(raw){
@@ -164,8 +169,10 @@ function adminHome(){
   const s=E('section','box','<h3>La saga</h3>');
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea');
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value},{merge:true});await load();toast('Saga enregistrée ✔')};
-  s.append(a,b,c,d,sv);
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920),rm=E('button','mini','Retirer le fond');
+  rm.onclick=()=>{meta.fond='';fw.querySelector('.th').hidden=true;toast('Fond retiré : pensez à enregistrer')};fw.append(rm);
+  s.append(a,b,c,d,fw,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
