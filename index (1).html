@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Les aventures des jeunes héros</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070d24;--pan:#0f1838;--ink:#f3ead0;--mut:#9aa3c7;--line:#26325f;--g1:#fff1b0;--g2:#e8b93c;--g3:#a8741a;--fs:20px}
+[data-th=light]{--bg:#f6f0e2;--pan:#fffaf0;--ink:#1b2340;--mut:#6b6f85;--line:#d9cfb8}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% 0,#1b2f6b55,transparent 45%),var(--bg);color:var(--ink);font:18px/1.5 "Cormorant Garamond",Georgia,serif}
+a{color:inherit;text-decoration:none}
+.gold{background:linear-gradient(180deg,var(--g1),var(--g2) 50%,var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero{text-align:center;padding:44px 16px 8px}.hero h1{font-size:clamp(2.2rem,7vw,3.8rem);margin:0;line-height:1}
+.orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
+.cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
+.cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.05}
+.st{text-align:center;margin-top:6px;min-height:1.5em}
+.b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
+footer{text-align:center;color:var(--mut);padding:20px}
+.bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--line);z-index:5}
+.bar select,.bar button{font:inherit;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 8px;max-width:45vw}
+article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs);line-height:1.65}
+.tt{text-align:center;margin:30px 0}.tt h1{font-size:2.4em;margin:0;line-height:1}
+article p{margin:0 0 .9em;text-align:justify;hyphens:auto}
+article h2{font-size:1.8em;text-align:center;margin:1.6em 0 .6em}
+.pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh;border-radius:6px;box-shadow:0 8px 30px #0009}.pg figcaption{font-style:italic;color:var(--mut)}
+.end,.c{text-align:center}.mut{color:var(--mut)}
+#gear{position:fixed;right:6px;bottom:6px;opacity:.12;background:none;border:0;color:var(--ink);font-size:14px;cursor:pointer;z-index:10}#gear:hover{opacity:.7}
+#adm{position:fixed;inset:0;overflow:auto;background:var(--bg);z-index:20;padding:0 14px 60px}
+.abar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 0;background:var(--bg);z-index:3;flex-wrap:wrap}.abar h2{margin:0 auto 0 0}
+.box{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px auto;max-width:760px}.box h3{margin:0 0 8px;color:var(--g2)}
+.box label{display:block;font-weight:700;margin:8px 0 2px}
+.box input,.box textarea,.box select{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
+.btn,.mini{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--g2);background:transparent;color:var(--g2);padding:5px 12px;border-radius:8px}
+.main{background:var(--g2);color:#1b1500}.mini{padding:0 8px;margin-left:4px}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0}.row b{white-space:nowrap}.row .btn:first-of-type{margin-left:auto}
+.blk{border:1px solid var(--line);border-radius:8px;padding:8px;margin:4px 0}.bh{font-size:.9rem;color:var(--mut);margin-bottom:4px;display:flex;align-items:center}.bh .mini:first-of-type{margin-left:auto}
+.ins{text-align:center;opacity:.45}.ins:hover{opacity:1}.th{max-height:90px;margin-top:6px;border-radius:4px;display:block}
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--g2);color:#1b1500;padding:2px 14px;border-radius:12px;z-index:60;font-weight:700}#toast:empty{display:none}
+dialog{background:var(--pan);color:var(--ink);border:1px solid var(--g2);border-radius:12px;max-width:340px}
+dialog input{width:100%;font:inherit;padding:6px 8px;margin:4px 0 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="adm" hidden></div>
+<button id="gear" title="Administration" aria-label="Administration">⚙</button>
+<div id="toast"></div>
+<dialog id="lg">
+  <form method="dialog">
+    <b class="gold" style="font-size:1.4rem">Administration</b>
+    <input id="em" type="email" placeholder="E-mail" autocomplete="username">
+    <input id="pw" type="password" placeholder="Mot de passe" autocomplete="current-password">
+    <div id="lm" class="mut"></div>
+    <button class="btn main" id="go">Se connecter</button> <button class="btn" value="x">Annuler</button>
+  </form>
+</dialog>
+
+<script type="module">
+import {firebaseConfig} from './firebase-config.js';
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,query,where,writeBatch} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const $=s=>document.querySelector(s),app=$('#app'),ov=$('#adm');
+const E=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toast=m=>{$('#toast').textContent=m;clearTimeout(toast.t);if(m)toast.t=setTimeout(()=>$('#toast').textContent='',4000)};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const badge=t=>t.status==='draft'?'<span class="b">brouillon (visible par vous seul)</span>':t.status==='wip'?'<span class="b">en cours d’écriture</span>':'';
+document.documentElement.dataset.th=localStorage.th||'';
+const setFs=()=>document.documentElement.style.setProperty('--fs',(+localStorage.fs||20)+'px');setFs();
+
+if(!firebaseConfig||String(firebaseConfig.apiKey).startsWith('VOTRE')){
+  app.innerHTML='<p class="c mut" style="padding:60px 20px">Renseignez d’abord <b>firebase-config.js</b> (voir le fichier LISEZMOI.md).</p>';
+  throw new Error('firebase non configuré');
+}
+const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb);
+let admin=false,openAfter=false,meta={},tomes=[];
+
+/* ---------- images (stockées dans Firestore, compressées) ---------- */
+const imgs=new Map();
+const img=id=>{if(!id)return Promise.resolve('');if(!imgs.has(id))imgs.set(id,getDoc(doc(db,'images',id)).then(s=>s.exists()?s.data().d:'').catch(()=>''));return imgs.get(id)};
+const setBg=async(el,id)=>{const d=await img(id);if(d)el.style.backgroundImage=`url(${d})`};
+const readFile=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
+const shrink=src=>new Promise(ok=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1400/i.width,2100/i.height),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}ok(d)};i.src=src});
+async function upload(src){const d=await shrink(src),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
+
+/* ---------- chargement ---------- */
+async function load(){
+  try{
+    meta=(await getDoc(doc(db,'meta','saga'))).data()||{};
+    const q=admin?collection(db,'tomes'):query(collection(db,'tomes'),where('status','in',['wip','done']));
+    tomes=(await getDocs(q)).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.n-b.n);
+  }catch(e){app.innerHTML='<p class="c mut" style="padding:60px 20px">Impossible de charger la saga. Vérifiez la configuration Firebase et les règles Firestore.</p>';throw e}
+}
+
+/* ---------- lecture ---------- */
+function home(){
+  document.title=meta.serie||'La saga';
+  app.innerHTML=`<header class="hero"><h1 class="gold">${esc(meta.serie||'La saga')}</h1><div class="orn">♛</div><p class="intro">${esc(meta.intro||'')}</p></header><div class="grid" id="grid"></div><footer>${esc([meta.auteur,meta.edition].filter(Boolean).join(' — '))}</footer>`;
+  const g=$('#grid');
+  if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
+  tomes.forEach(t=>{
+    const c=E('a','card');c.href='#/t/'+t.id;
+    c.innerHTML=`<div class="cv">${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}</div><div class="st">${badge(t)}</div>`;
+    setBg(c.firstChild,t.coverPng||t.cover);g.append(c);
+  });
+}
+let tm;
+async function read(id){
+  const t=tomes.find(x=>x.id===id);if(!t){location.hash='#/';return}
+  app.innerHTML='<p class="c mut" style="padding:60px">Chargement…</p>';
+  const bl=(await getDocs(collection(db,'tomes',id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
+  document.title=t.titre;
+  app.innerHTML=`<div class="bar"><a href="#/">← Saga</a><select id="toc"><option value="">Chapitres</option></select><span><button id="am">A−</button> <button id="ap">A+</button> <button id="th">◐</button></span></div><article id="art"><div class="tt"><small>Tome ${esc(t.n)}</small><h1 class="gold">${esc(t.titre)}</h1></div></article>`;
+  const art=$('#art'),toc=$('#toc');let n=0;
+  for(const b of bl){
+    if(b.t==='ch'){const h=E('h2','gold',esc(b.text));h.id='c'+n;art.append(h);toc.add(new Option(b.text,'c'+n));n++}
+    else if(b.t==='im'){const f=E('figure','pg'),im=E('img');im.alt=b.cap||'';f.append(im);if(b.cap)f.append(E('figcaption','',esc(b.cap)));art.append(f);img(b.img).then(d=>im.src=d)}
+    else (b.text||'').split(/\n{2,}/).forEach(p=>{if(p.trim())art.append(E('p','',esc(p.trim()).replace(/\n/g,'<br>')))});
+  }
+  if(!bl.length)art.append(E('p','mut c','Ce tome n’a pas encore de texte.'));
+  if(t.status==='wip')art.append(E('p','end gold','✍ La suite arrive…'));
+  toc.onchange=()=>toc.value&&document.getElementById(toc.value).scrollIntoView({behavior:'smooth'});
+  $('#am').onclick=()=>{localStorage.fs=Math.max(14,(+localStorage.fs||20)-1);setFs()};
+  $('#ap').onclick=()=>{localStorage.fs=Math.min(34,(+localStorage.fs||20)+1);setFs()};
+  $('#th').onclick=()=>{localStorage.th=localStorage.th==='light'?'':'light';document.documentElement.dataset.th=localStorage.th};
+  const k='pos-'+id;setTimeout(()=>scrollTo(0,+localStorage.getItem(k)||0),120);
+  window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
+}
+function route(){window.onscroll=null;const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);m?read(m[1]):home()}
+window.onhashchange=route;
+
+/* ---------- administration ---------- */
+const F=(l,v,tag='input')=>{const w=E('label','',esc(l)),i=E(tag);i.value=v??'';w.append(i);return[w,i]};
+const mk=(t,o)=>({id:'b'+uid(),t,text:'',...o});
+function imgPick(l,o,k){
+  const w=E('label','',esc(l)),f=E('input'),th=E('img','th');f.type='file';f.accept='image/*';th.hidden=!o[k];
+  if(o[k])img(o[k]).then(d=>th.src=d);
+  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]));th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
+  w.append(f,th);return w;
+}
+function parse(raw){
+  const out=[];let buf=[];
+  const flush=()=>{const txt=buf.join('\n').trim();buf=[];if(!txt)return;let cur='';
+    txt.split(/\n{2,}/).forEach(p=>{if(cur&&(cur+p).length>8000){out.push(mk('tx',{text:cur}));cur=''}cur+=(cur?'\n\n':'')+p});
+    if(cur)out.push(mk('tx',{text:cur}))};
+  for(const l of raw.replace(/\r/g,'').split('\n')){
+    let m;
+    if((m=l.match(/^#{1,3}\s+(.+)/))||(m=l.match(/^(chapitre\s+.+)/i))){flush();out.push(mk('ch',{text:m[1].trim()}))}
+    else if((m=l.match(/^\[\[(?:illustration|image|page)\s*:?\s*(.*?)\]\]\s*$/i))){flush();out.push(mk('im',{cap:m[1],img:''}))}
+    else buf.push(l);
+  }
+  flush();return out;
+}
+function adminHome(){
+  ov.hidden=false;ov.innerHTML='';
+  const top=E('div','abar','<h2 class="gold">Administration</h2>'),cl=E('button','btn','Fermer'),lo=E('button','btn','Déconnexion');
+  cl.onclick=()=>{ov.hidden=true;route()};lo.onclick=()=>signOut(auth);top.append(cl,lo);
+  const s=E('section','box','<h3>La saga</h3>');
+  const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea');
+  const sv=E('button','btn main','Enregistrer');
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value},{merge:true});await load();toast('Saga enregistrée ✔')};
+  s.append(a,b,c,d,sv);
+  const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
+  const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
+  fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
+  const tl=E('section','box','<h3>Tomes</h3>');
+  tomes.forEach(t=>{const r=E('div','row');r.innerHTML=`<b>Tome ${esc(t.n)}</b> <span>${esc(t.titre)}</span> ${badge(t)}`;
+    const e=E('button','btn','Éditer'),x=E('button','btn','✕');e.onclick=()=>editTome(t);x.onclick=()=>delTome(t);r.append(e,x);tl.append(r)});
+  const nb=E('button','btn main','＋ Nouveau tome');
+  nb.onclick=()=>editTome({id:'t'+uid(),n:tomes.reduce((m,t)=>Math.max(m,t.n||0),0)+1,titre:'',status:'draft',isNew:1});
+  tl.append(nb);ov.append(top,s,im,tl);
+}
+async function importJSON(txt){
+  let a;try{a=JSON.parse(txt)}catch{return toast('Texte JSON invalide.')}
+  const arr=Array.isArray(a)?a:a.tomes;if(!Array.isArray(arr))return toast('Format non reconnu.');
+  for(const [i,t] of arr.entries()){
+    toast(`Import du tome ${i+1}/${arr.length}…`);
+    const o={n:t.tome,titre:t.titre||''};
+    if(t.img)o.cover=await upload(t.img);
+    if(!tomes.some(x=>x.id===t.id))o.status='draft';
+    await setDoc(doc(db,'tomes',t.id),o,{merge:true});
+  }
+  const f=arr[0]||{};
+  await setDoc(doc(db,'meta','saga'),{serie:f.serie||'',auteur:f.auteur||'',edition:f.edition||'',...(a.saga&&a.saga.intro?{intro:a.saga.intro}:{})},{merge:true});
+  await load();adminHome();toast('Import terminé ✔');
+}
+async function delTome(t){
+  if(!confirm('Supprimer « '+t.titre+' » et tout son texte ?'))return;
+  for(const d of (await getDocs(collection(db,'tomes',t.id,'blocks'))).docs)await deleteDoc(d.ref);
+  await deleteDoc(doc(db,'tomes',t.id));await load();adminHome();
+}
+async function editTome(t){
+  let bl=t.isNew?[]:(await getDocs(collection(db,'tomes',t.id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
+  const orig=bl.map(b=>b.id);
+  const draw=()=>{
+    const y=ov.scrollTop;ov.innerHTML='';
+    const top=E('div','abar',`<h2 class="gold">Tome ${esc(t.n)}</h2>`),back=E('button','btn','← Retour'),sv=E('button','btn main','Enregistrer le tome');
+    back.onclick=async()=>{await load();adminHome()};
+    sv.onclick=async()=>{
+      toast('Enregistrement…');
+      const ops=[[doc(db,'tomes',t.id),{n:t.n||0,titre:t.titre||'',status:t.status||'draft',cover:t.cover||'',coverPng:t.coverPng||''},1]];
+      bl.forEach((b,i)=>ops.push([doc(db,'tomes',t.id,'blocks',b.id),{o:i,t:b.t,text:b.text||'',img:b.img||'',cap:b.cap||''},1]));
+      orig.filter(id=>!bl.some(b=>b.id===id)).forEach(id=>ops.push([doc(db,'tomes',t.id,'blocks',id),0,0]));
+      try{for(let i=0;i<ops.length;i+=400){const w=writeBatch(db);ops.slice(i,i+400).forEach(([r,d,s])=>s?w.set(r,d,{merge:true}):w.delete(r));await w.commit()}}
+      catch(e){return toast('Échec de l’enregistrement : '+e.code)}
+      orig.length=0;bl.forEach(b=>orig.push(b.id));delete t.isNew;await load();toast('Tome enregistré ✔');
+    };
+    top.append(back,sv);
+    const m=E('section','box','<h3>Informations</h3>');
+    const [a,ia]=F('Titre',t.titre),[b,ib]=F('N° de tome',t.n),sl=E('select');
+    ib.type='number';ia.oninput=()=>t.titre=ia.value;ib.oninput=()=>t.n=+ib.value;
+    [['draft','Brouillon (invisible des lecteurs)'],['wip','En cours d’écriture (visible)'],['done','Terminé (visible)']].forEach(([v,l])=>sl.add(new Option(l,v)));
+    sl.value=t.status||'draft';sl.onchange=()=>t.status=sl.value;
+    m.append(a,b,sl,imgPick('Couverture finale (PNG exporté depuis l’atelier)',t,'coverPng'),imgPick('Illustration de couverture (si pas de PNG)',t,'cover'));
+    const ti=E('section','box','<h3>Importer le texte du tome</h3><p class="mut">Fichier .txt ou .md, ou texte collé. Un titre de chapitre = une ligne commençant par # ou « Chapitre ». Une page illustrée = une ligne [[illustration : légende]] à l’endroit voulu.</p>');
+    const ta=E('textarea'),fi=E('input'),mo=E('select'),bt=E('button','btn main','Importer le texte');
+    ta.rows=5;fi.type='file';fi.accept='.txt,.md';fi.onchange=async()=>{ta.value=await fi.files[0].text()};
+    mo.add(new Option('Remplacer le contenu actuel','r'));mo.add(new Option('Ajouter à la fin','a'));
+    bt.onclick=()=>{const nb=parse(ta.value);bl=mo.value==='r'?nb:bl.concat(nb);draw();toast(nb.length+' blocs créés')};
+    ti.append(ta,fi,mo,bt);
+    const bx=E('section','box','<h3>Contenu (chapitres, textes, pages illustrées)</h3>');
+    const ins=i=>{const r=E('div','ins');[['ch','＋ Chapitre'],['tx','＋ Texte'],['im','＋ Page illustrée']].forEach(([ty,l])=>{const x=E('button','mini',l);x.onclick=()=>{bl.splice(i,0,mk(ty,{}));draw()};r.append(x)});return r};
+    bl.forEach((b,i)=>{
+      bx.append(ins(i));
+      const c=E('div','blk'),hd=E('div','bh',({ch:'Chapitre',tx:'Texte',im:'Page illustrée'})[b.t]+' · n°'+(i+1)),up=E('button','mini','↑'),dn=E('button','mini','↓'),x=E('button','mini','✕');
+      up.onclick=()=>{if(i){[bl[i-1],bl[i]]=[bl[i],bl[i-1]];draw()}};
+      dn.onclick=()=>{if(i<bl.length-1){[bl[i+1],bl[i]]=[bl[i],bl[i+1]];draw()}};
+      x.onclick=()=>{bl.splice(i,1);draw()};hd.append(up,dn,x);c.append(hd);
+      if(b.t==='im'){c.append(imgPick('Image de la page illustrée',b,'img'));const [w,ci]=F('Légende',b.cap);ci.oninput=()=>b.cap=ci.value;c.append(w)}
+      else{const e=E(b.t==='ch'?'input':'textarea');e.value=b.text;if(b.t==='tx')e.rows=8;e.oninput=()=>b.text=e.value;c.append(e)}
+      bx.append(c);
+    });
+    bx.append(ins(bl.length));
+    ov.append(top,m,ti,bx);ov.scrollTop=y;
+  };
+  draw();
+}
+
+/* ---------- connexion discrète ---------- */
+$('#gear').onclick=()=>{if(admin)adminHome();else{openAfter=true;$('#lm').textContent='';$('#lg').showModal()}};
+$('#go').onclick=async e=>{
+  e.preventDefault();
+  try{await signInWithEmailAndPassword(auth,$('#em').value,$('#pw').value);$('#pw').value='';$('#lg').close()}
+  catch{$('#lm').textContent='E-mail ou mot de passe incorrect.'}
+};
+onAuthStateChanged(auth,async u=>{
+  admin=!!u;await load();
+  if(!admin)ov.hidden=true;
+  route();
+  if(admin&&openAfter){openAfter=false;adminHome()}
+});
+</script>
+</body>
+</html>
