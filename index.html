@@ -28,7 +28,7 @@ footer{text-align:center;color:var(--mut);padding:20px}
 .bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--line);z-index:5}
 .bar select,.bar button{font:inherit;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 8px;max-width:45vw}
 article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs);line-height:1.65}
-.tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.05;text-transform:uppercase;letter-spacing:.06em}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
+.tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.05;text-transform:uppercase;letter-spacing:.06em}.tt .ill{display:block;margin:0 auto -64px;max-width:100%;max-height:70vh;-webkit-mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);mask-composite:intersect}.tt small,.tt h1{position:relative}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
 article p{margin:0 0 .9em;text-align:justify;hyphens:auto}
 article h2{font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);text-align:center;margin:2.4em 0 1em;letter-spacing:.02em}article h2::before{content:"";display:block;width:48px;height:1px;background:var(--g2);margin:0 auto .7em}
 .pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh}.pg figcaption{font-style:italic;color:var(--mut)}
@@ -142,8 +142,10 @@ async function read(id){
   app.innerHTML='<p class="c mut" style="padding:60px">Chargement…</p>';
   const bl=(await getDocs(collection(db,'tomes',id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
   document.title=t.titre;
-  app.innerHTML=`<div class="bar"><a href="#/">← Saga</a><select id="toc"><option value="">Chapitres</option></select><span><button id="am">A−</button> <button id="ap">A+</button> <button id="th">◐</button></span></div><article id="art"><div class="tt"><small>Tome ${esc(t.n)}</small><h1 class="gold">${esc(t.titre)}</h1></div></article>`;
-  const art=$('#art'),toc=$('#toc');let n=0;
+  const cov=t.cover||t.coverPng,csrc=cov?await img(cov):'';
+  app.innerHTML=`<div class="bar"><a href="#/">← Saga</a><select id="toc"><option value="">Chapitres</option></select><span><button id="am">A−</button> <button id="ap">A+</button> <button id="th">◐</button></span></div><article id="art"><div class="tt">${csrc?'<img class="ill" alt="">':''}<small>Tome ${esc(t.n)}</small><h1 class="gold">${esc(t.titre)}</h1></div></article>`;
+  const art=$('#art'),toc=$('#toc'),il=$('.ill');let n=0;
+  if(il)il.src=csrc;
   for(const b of bl){
     if(b.t==='ch'){const h=E('h2','',esc(b.text));h.id='c'+n;art.append(h);toc.add(new Option(b.text,'c'+n));n++}
     else if(b.t==='im'){const f=E('figure','pg'),im=E('img');im.alt=b.cap||'';f.append(im);if(b.cap)f.append(E('figcaption','',esc(b.cap)));art.append(f);img(b.img).then(d=>im.src=d)}
@@ -155,7 +157,7 @@ async function read(id){
   $('#am').onclick=()=>{localStorage.fs=Math.max(14,(+localStorage.fs||20)-1);setFs()};
   $('#ap').onclick=()=>{localStorage.fs=Math.min(34,(+localStorage.fs||20)+1);setFs()};
   $('#th').onclick=()=>{localStorage.th=localStorage.th==='light'?'':'light';document.documentElement.dataset.th=localStorage.th};
-  const k='pos-'+id;setTimeout(()=>scrollTo(0,+localStorage.getItem(k)||0),120);
+  const k='pos-'+id,back=()=>scrollTo(0,+localStorage.getItem(k)||0);setTimeout(back,120);if(il)il.onload=back;
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
 function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);m?read(m[1]):home()}
