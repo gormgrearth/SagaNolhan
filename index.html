@@ -29,7 +29,8 @@ article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs)
 .tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.05;text-transform:uppercase;letter-spacing:.06em}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
 article p{margin:0 0 .9em;text-align:justify;hyphens:auto}
 article h2{font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);text-align:center;margin:2.4em 0 1em;letter-spacing:.02em}article h2::before{content:"";display:block;width:48px;height:1px;background:var(--g2);margin:0 auto .7em}
-.pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh}.pg figcaption{font-style:italic;color:var(--mut)}
+.pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh}
+.zw{display:inline-block;max-width:100%;overflow:hidden;line-height:0;cursor:zoom-in}.zw img{display:block;transition:transform .35s ease}.zw.zoom img{transform:scale(2.4)}.pg figcaption{font-style:italic;color:var(--mut)}
 .end,.c{text-align:center}.mut{color:var(--mut)}
 #gear{position:fixed;right:6px;bottom:6px;opacity:.12;background:none;border:0;color:var(--ink);font-size:14px;cursor:pointer;z-index:10}#gear:hover{opacity:.7}
 #adm{position:fixed;inset:0;overflow:auto;background:var(--bg);z-index:20;padding:0 14px 60px}
@@ -124,6 +125,17 @@ function home(){
     setBg(c.firstChild,t.coverPng||t.cover);g.append(c);
   });
 }
+/* zoom quand la souris reste immobile sur une illustration ; le zoom suit ensuite le pointeur */
+function zoomable(w,im){
+  let t,on=0;
+  const off=()=>{clearTimeout(t);on=0;w.classList.remove('zoom')};
+  w.onpointermove=e=>{
+    if(e.pointerType!=='mouse')return;
+    const r=w.getBoundingClientRect();im.style.transformOrigin=((e.clientX-r.left)/r.width*100)+'% '+((e.clientY-r.top)/r.height*100)+'%';
+    if(!on){clearTimeout(t);t=setTimeout(()=>{on=1;w.classList.add('zoom')},500)}
+  };
+  w.onpointerleave=off;
+}
 let tm;
 async function read(id){
   const t=tomes.find(x=>x.id===id);if(!t){location.hash='#/';return}
@@ -134,7 +146,7 @@ async function read(id){
   const art=$('#art'),toc=$('#toc');let n=0;
   for(const b of bl){
     if(b.t==='ch'){const h=E('h2','',esc(b.text));h.id='c'+n;art.append(h);toc.add(new Option(b.text,'c'+n));n++}
-    else if(b.t==='im'){const f=E('figure','pg'),im=E('img');im.alt=b.cap||'';f.append(im);if(b.cap)f.append(E('figcaption','',esc(b.cap)));art.append(f);img(b.img).then(d=>im.src=d)}
+    else if(b.t==='im'){const f=E('figure','pg'),im=E('img'),zw=E('div','zw');im.alt=b.cap||'';zw.append(im);f.append(zw);zoomable(zw,im);if(b.cap)f.append(E('figcaption','',esc(b.cap)));art.append(f);img(b.img).then(d=>im.src=d)}
     else (b.text||'').split(/\n{2,}/).forEach(p=>{if(p.trim())art.append(E('p','',esc(p.trim()).replace(/\n/g,'<br>')))});
   }
   if(!bl.length)art.append(E('p','mut c','Ce tome n’a pas encore de texte.'));
