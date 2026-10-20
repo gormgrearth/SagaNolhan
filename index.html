@@ -16,7 +16,7 @@ a{color:inherit;text-decoration:none}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
-.cv{cursor:zoom-in}.cz{position:absolute;inset:0;background:center/cover no-repeat;transition:transform .35s ease}.cv.zoom .cz{transform:scale(2.4)}
+.cv{cursor:zoom-in;transition:transform .35s ease,box-shadow .35s ease}.cv.zoom{transform:scale(1.6);z-index:10;box-shadow:0 16px 40px #000c}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.05}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
@@ -122,17 +122,16 @@ function home(){
   tomes.forEach(t=>{
     const c=E('a','card');c.href='#/t/'+t.id;
     c.innerHTML=`<div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}</div><div class="st">${badge(t)}</div>`;
-    const cv=c.firstChild;setBg(cv.firstChild,t.coverPng||t.cover);zoomable(cv,cv.firstChild);g.append(c);
+    const cv=c.firstChild;setBg(cv.firstChild,t.coverPng||t.cover);zoomable(cv);g.append(c);
   });
 }
-/* zoom quand la souris reste immobile sur une couverture ; le zoom suit ensuite le pointeur */
-function zoomable(w,im){
+/* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
+function zoomable(w){
   let t,on=0;
   const off=()=>{clearTimeout(t);on=0;w.classList.remove('zoom')};
   w.onpointermove=e=>{
-    if(e.pointerType!=='mouse')return;
-    const r=w.getBoundingClientRect();im.style.transformOrigin=((e.clientX-r.left)/r.width*100)+'% '+((e.clientY-r.top)/r.height*100)+'%';
-    if(!on){clearTimeout(t);t=setTimeout(()=>{on=1;w.classList.add('zoom')},500)}
+    if(e.pointerType!=='mouse'||on)return;
+    clearTimeout(t);t=setTimeout(()=>{on=1;w.classList.add('zoom')},500);
   };
   w.onpointerleave=off;
 }
