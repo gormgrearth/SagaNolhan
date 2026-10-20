@@ -90,15 +90,17 @@ const imgs=new Map();
 const img=id=>{if(!id)return Promise.resolve('');if(!imgs.has(id))imgs.set(id,getDoc(doc(db,'images',id)).then(s=>s.exists()?s.data().d:'').catch(()=>''));return imgs.get(id)};
 const setBg=async(el,id)=>{const d=await img(id);if(d)el.style.backgroundImage=`url(${d})`};
 const readFile=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
-const shrink=(src,W=1400,H=2100)=>new Promise(ok=>{const i=new Image();i.onload=()=>{
-  const draw=k=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.width*k));c.height=Math.max(1,Math.round(i.height*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);return c};
+const shrink=(src,W=1400,H=2100,ns)=>new Promise(ok=>{const i=new Image();i.onload=()=>{
+  const draw=k=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.width*k));c.height=Math.max(1,Math.round(i.height*k));const x=c.getContext('2d');x.drawImage(i,0,0,c.width,c.height);
+    if(ns){/* retire l'ombre portée : pixels sombres et semi-transparents */const im=x.getImageData(0,0,c.width,c.height),p=im.data;for(let n=0;n<p.length;n+=4)if(p[n+3]<250&&Math.max(p[n],p[n+1],p[n+2])<110)p[n+3]=0;x.putImageData(im,0,0)}
+    return c};
   let k=Math.min(1,W/i.width,H/i.height),c=draw(k),a=c.getContext('2d').getImageData(0,0,c.width,c.height).data,alpha=false,d;
   for(let n=3;n<a.length;n+=4)if(a[n]<250){alpha=true;break}
   if(alpha){/* transparence : WebP (le JPEG la remplacerait par du noir) */
     for(let n=0;n<8;n++){c=draw(k);d=c.toDataURL('image/webp',.85);if(d.length<=900000)break;d=c.toDataURL('image/webp',.6);if(d.length<=900000)break;k*=.8}
   }else{let q=.85;d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}}
   ok(d)};i.src=src});
-async function upload(src,W,H){const d=await shrink(src,W,H),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
+async function upload(src,W,H,ns){const d=await shrink(src,W,H,ns),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
 
 /* ---------- chargement ---------- */
 async function load(){
@@ -150,10 +152,10 @@ window.onhashchange=route;
 /* ---------- administration ---------- */
 const F=(l,v,tag='input')=>{const w=E('label','',esc(l)),i=E(tag);i.value=v??'';w.append(i);return[w,i]};
 const mk=(t,o)=>({id:'b'+uid(),t,text:'',...o});
-function imgPick(l,o,k,W,H){
+function imgPick(l,o,k,W,H,ns){
   const w=E('label','',esc(l)),f=E('input'),th=E('img','th');f.type='file';f.accept='image/*';th.hidden=!o[k];
   if(o[k])img(o[k]).then(d=>th.src=d);
-  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]),W,H);th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
+  f.onchange=async()=>{toast('Envoi de l’image…');o[k]=await upload(await readFile(f.files[0]),W,H,ns&&ns());th.hidden=false;th.src=await img(o[k]);toast('Image prête : pensez à enregistrer')};
   w.append(f,th);return w;
 }
 function parse(raw){
@@ -177,9 +179,11 @@ function adminHome(){
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea');
   const sv=E('button','btn main','Enregistrer');
   sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
-  const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920),rm=E('button','mini','Retirer le fond');
+  const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
+  const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
+  const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked),rm=E('button','mini','Retirer le fond');
   rm.onclick=()=>{meta.fond='';fw.querySelector('.th').hidden=true;toast('Fond retiré : pensez à enregistrer')};fw.append(rm);
-  s.append(a,b,c,d,fw,sv);
+  s.append(a,b,c,d,cw,fw,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
