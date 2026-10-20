@@ -90,7 +90,14 @@ const imgs=new Map();
 const img=id=>{if(!id)return Promise.resolve('');if(!imgs.has(id))imgs.set(id,getDoc(doc(db,'images',id)).then(s=>s.exists()?s.data().d:'').catch(()=>''));return imgs.get(id)};
 const setBg=async(el,id)=>{const d=await img(id);if(d)el.style.backgroundImage=`url(${d})`};
 const readFile=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
-const shrink=(src,W=1400,H=2100)=>new Promise(ok=>{const i=new Image();i.onload=()=>{const s=Math.min(1,W/i.width,H/i.height),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}ok(d)};i.src=src});
+const shrink=(src,W=1400,H=2100)=>new Promise(ok=>{const i=new Image();i.onload=()=>{
+  const draw=k=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.width*k));c.height=Math.max(1,Math.round(i.height*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);return c};
+  let k=Math.min(1,W/i.width,H/i.height),c=draw(k),a=c.getContext('2d').getImageData(0,0,c.width,c.height).data,alpha=false,d;
+  for(let n=3;n<a.length;n+=4)if(a[n]<250){alpha=true;break}
+  if(alpha){/* transparence : WebP (le JPEG la remplacerait par du noir) */
+    for(let n=0;n<8;n++){c=draw(k);d=c.toDataURL('image/webp',.85);if(d.length<=900000)break;d=c.toDataURL('image/webp',.6);if(d.length<=900000)break;k*=.8}
+  }else{let q=.85;d=c.toDataURL('image/jpeg',q);while(d.length>900000&&q>.4){q-=.1;d=c.toDataURL('image/jpeg',q)}}
+  ok(d)};i.src=src});
 async function upload(src,W,H){const d=await shrink(src,W,H),id='i'+uid();await setDoc(doc(db,'images',id),{d});imgs.set(id,Promise.resolve(d));return id}
 
 /* ---------- chargement ---------- */
