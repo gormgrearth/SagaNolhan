@@ -22,6 +22,7 @@ a{color:inherit;text-decoration:none}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
 footer{text-align:center;color:var(--mut);padding:20px}
+#mu{position:fixed;top:12px;right:14px;z-index:15;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--pan);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 10px #0005;opacity:.85}#mu:hover{opacity:1}#mu[hidden]{display:none}
 #fond{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat;opacity:0;transition:opacity .6s}#fond.on{opacity:1}
 #fond::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.6}
 .hero h1,.intro{text-shadow:0 2px 12px var(--bg)}
@@ -51,6 +52,8 @@ dialog input{width:100%;font:inherit;padding:6px 8px;margin:4px 0 8px;border:1px
 </head>
 <body>
 <div id="fond"></div>
+<button id="mu" hidden aria-label="Couper ou activer la musique" title="Musique">🔊</button>
+<div style="position:fixed;left:-300px;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none" aria-hidden="true"><div id="yt"></div></div>
 <div id="app"></div>
 <div id="adm" hidden></div>
 <button id="gear" title="Administration" aria-label="Administration">⚙</button>
@@ -160,7 +163,30 @@ async function read(id){
   const k='pos-'+id,back=()=>scrollTo(0,+localStorage.getItem(k)||0);setTimeout(back,120);if(il)il.onload=back;
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
-function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);m?read(m[1]):home()}
+/* musique d'ambiance : uniquement sur la page de la saga, coupée pendant la lecture */
+const YT_ID='fhw81AOrWlc';
+let yt,ytReady=0,ytOk=1,onHome=0,musicOn=localStorage.mu!=='off';
+function ytInit(){
+  const mk=()=>{yt=new YT.Player('yt',{width:'200',height:'200',videoId:YT_ID,
+    playerVars:Object.assign({controls:0,disablekb:1,playsinline:1,rel:0,fs:0},location.protocol.startsWith('http')?{origin:location.origin}:{}),
+    events:{onReady:()=>{ytReady=1;yt.setVolume(60);musicSync()},
+      onStateChange:e=>{if(e.data===0){yt.seekTo(0);yt.playVideo()}},
+      onError:()=>{ytOk=0;$('#mu').hidden=true}}})};
+  if(window.YT&&YT.Player)return mk();
+  window.onYouTubeIframeAPIReady=mk;
+  const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.append(sc);
+}
+function musicSync(){
+  const b=$('#mu');b.hidden=!onHome||!ytOk;b.textContent=musicOn?'🔊':'🔇';b.title=musicOn?'Couper la musique':'Activer la musique';
+  if(!ytReady)return;
+  if(onHome&&musicOn)yt.playVideo();else yt.pauseVideo();
+}
+$('#mu').onclick=()=>{musicOn=!musicOn;localStorage.mu=musicOn?'':'off';musicSync()};
+/* les navigateurs bloquent le son avant toute interaction : la musique démarre au premier clic ou à la première touche */
+['click','keydown','touchend'].forEach(ev=>document.addEventListener(ev,e=>{
+  if(onHome&&musicOn&&ytReady&&!(e.target.closest&&e.target.closest('#mu'))&&yt.getPlayerState()!==1)yt.playVideo();
+},true));
+function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);onHome=!m;if(onHome&&!yt)ytInit();musicSync();m?read(m[1]):home()}
 window.onhashchange=route;
 
 /* ---------- administration ---------- */
