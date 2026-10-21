@@ -172,11 +172,11 @@ async function read(id){
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
 /* à propos / crédits : discret, ouvert à la demande */
-const APROPOS=`Les illustrations sont générées par IA, d’après les dessins coloriés par des enfants.
+const APROPOS=`Les récits sont issus d’aventures de jeu de rôle vécues par des enfants, dont Nolhan l’acteur principal. Ils sont retravaillés par intelligence artificielle, puis corrigés et ajustés par le papa de Nolhan.
 
-Les récits sont issus d’aventures de jeu de rôle vécues par les enfants, dont Nolhan est l’acteur principal. Ils sont retravaillés par IA, puis corrigés et ajustés par le papa de Nolhan.
+Les illustrations sont générées par intelligence artificielle, en partie inspirées des dessins coloriés par les enfants.
 
-La musique, « D’une pensée à une autre » (double instruments), est une composition personnelle du papa de Nolhan. Son audio a été synthétisé par IA pour donner vie à la partition.`;
+La musique, « D’une pensée à une autre », est une composition personnelle du papa de Nolhan. Son audio a été synthétisé par intelligence artificielle pour donner vie à la partition.`;
 function openAbout(){
   $('#abt').innerHTML=(meta.apropos??APROPOS).split(/\n{2,}/).filter(p=>p.trim()).map(p=>`<p>${esc(p.trim())}</p>`).join('');
   $('#ab').showModal();
