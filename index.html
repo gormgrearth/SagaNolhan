@@ -24,7 +24,11 @@ a{color:inherit;text-decoration:none}
 footer{text-align:center;color:var(--mut);padding:20px}
 .apb{background:none;border:0;color:var(--mut);font:inherit;font-size:.8em;font-style:italic;cursor:pointer;opacity:.75;text-decoration:underline dotted;text-underline-offset:3px;padding:4px 8px}.apb:hover{opacity:1}
 #ab{max-width:520px;line-height:1.55;text-align:left}#ab p{margin:.7em 0}#ab form{display:block}#ab .btn{margin-top:8px}
-#mu{position:fixed;top:12px;right:14px;z-index:15;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--pan);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 10px #0005;opacity:.85}#mu:hover{opacity:1}#mu[hidden]{display:none}
+#mc{position:fixed;top:12px;right:14px;z-index:15;display:flex;align-items:center;gap:6px;border-radius:999px;border:1px solid transparent;transition:background .25s,border-color .25s,padding .25s}#mc[hidden]{display:none}
+#mu{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--pan);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 10px #0005;opacity:.85}#mu:hover{opacity:1}
+#vol{width:0;opacity:0;margin:0;padding:0;accent-color:var(--g2);cursor:pointer;transition:width .25s,opacity .25s}
+@media (hover:hover){#mc:hover,#mc:focus-within{background:var(--pan);border-color:var(--line);padding-left:14px}#mc:hover #vol,#mc:focus-within #vol{width:100px;opacity:1}}
+@media (hover:none){#vol{display:none}}
 #fond{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat;opacity:0;transition:opacity .6s}#fond.on{opacity:1}
 #fond::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.6}
 .hero h1,.intro{text-shadow:0 2px 12px var(--bg)}
@@ -54,7 +58,7 @@ dialog input{width:100%;font:inherit;padding:6px 8px;margin:4px 0 8px;border:1px
 </head>
 <body>
 <div id="fond"></div>
-<button id="mu" hidden aria-label="Couper ou activer la musique" title="Musique">🔊</button>
+<div id="mc" hidden><input id="vol" type="range" min="0" max="100" step="1" aria-label="Volume de la musique"><button id="mu" aria-label="Couper ou activer la musique" title="Musique">🔊</button></div>
 <div style="position:fixed;left:-300px;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none" aria-hidden="true"><div id="yt"></div></div>
 <div id="app"></div>
 <div id="adm" hidden></div>
@@ -181,26 +185,33 @@ $('#ab').onclick=e=>{if(e.target.id==='ab')e.target.close()};
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.apb'))openAbout()});
 /* musique d'ambiance : uniquement sur la page de la saga, coupée pendant la lecture */
 const YT_ID='fhw81AOrWlc';
-let yt,ytReady=0,ytOk=1,onHome=0,musicOn=localStorage.mu!=='off';
+let yt,ytReady=0,ytOk=1,onHome=0,musicOn=localStorage.mu!=='off',vol=(v=>isNaN(v)?30:Math.min(100,Math.max(0,v)))(parseInt(localStorage.vol));
 function ytInit(){
   const mk=()=>{yt=new YT.Player('yt',{width:'200',height:'200',videoId:YT_ID,
     playerVars:Object.assign({controls:0,disablekb:1,playsinline:1,rel:0,fs:0},location.protocol.startsWith('http')?{origin:location.origin}:{}),
-    events:{onReady:()=>{ytReady=1;yt.setVolume(30);musicSync()},
+    events:{onReady:()=>{ytReady=1;yt.setVolume(vol);musicSync()},
       onStateChange:e=>{if(e.data===0){yt.seekTo(0);yt.playVideo()}},
-      onError:()=>{ytOk=0;$('#mu').hidden=true}}})};
+      onError:()=>{ytOk=0;$('#mc').hidden=true}}})};
   if(window.YT&&YT.Player)return mk();
   window.onYouTubeIframeAPIReady=mk;
   const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.append(sc);
 }
 function musicSync(){
-  const b=$('#mu');b.hidden=!onHome||!ytOk;b.textContent=musicOn?'🔊':'🔇';b.title=musicOn?'Couper la musique':'Activer la musique';
+  const b=$('#mu'),on=musicOn&&vol>0;$('#mc').hidden=!onHome||!ytOk;b.textContent=on?'🔊':'🔇';b.title=on?'Couper la musique':'Activer la musique';
   if(!ytReady)return;
   if(onHome&&musicOn)yt.playVideo();else yt.pauseVideo();
 }
-$('#mu').onclick=()=>{musicOn=!musicOn;localStorage.mu=musicOn?'':'off';musicSync()};
+const volEl=$('#vol');volEl.value=vol;
+function setVol(v){vol=v;volEl.value=v;localStorage.vol=v;if(ytReady)yt.setVolume(v)}
+volEl.oninput=()=>{setVol(+volEl.value);if(vol>0&&!musicOn){musicOn=true;localStorage.mu=''}musicSync()};
+$('#mu').onclick=()=>{
+  if(musicOn&&vol===0)setVol(30);
+  else{musicOn=!musicOn;localStorage.mu=musicOn?'':'off';if(musicOn&&vol===0)setVol(30)}
+  musicSync();
+};
 /* les navigateurs bloquent le son avant toute interaction : la musique démarre au premier clic ou à la première touche */
 ['click','keydown','touchend'].forEach(ev=>document.addEventListener(ev,e=>{
-  if(onHome&&musicOn&&ytReady&&!(e.target.closest&&e.target.closest('#mu'))&&yt.getPlayerState()!==1)yt.playVideo();
+  if(onHome&&musicOn&&ytReady&&!(e.target.closest&&e.target.closest('#mc'))&&yt.getPlayerState()!==1)yt.playVideo();
 },true));
 function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);onHome=!m;if(onHome&&!yt)ytInit();musicSync();m?read(m[1]):home()}
 window.onhashchange=route;
