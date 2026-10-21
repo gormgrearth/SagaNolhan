@@ -22,6 +22,8 @@ a{color:inherit;text-decoration:none}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
 footer{text-align:center;color:var(--mut);padding:20px}
+.apb{background:none;border:0;color:var(--mut);font:inherit;font-size:.8em;font-style:italic;cursor:pointer;opacity:.75;text-decoration:underline dotted;text-underline-offset:3px;padding:4px 8px}.apb:hover{opacity:1}
+#ab{max-width:520px;line-height:1.55;text-align:left}#ab p{margin:.7em 0}#ab form{display:block}#ab .btn{margin-top:8px}
 #mu{position:fixed;top:12px;right:14px;z-index:15;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--pan);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 10px #0005;opacity:.85}#mu:hover{opacity:1}#mu[hidden]{display:none}
 #fond{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat;opacity:0;transition:opacity .6s}#fond.on{opacity:1}
 #fond::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.6}
@@ -58,6 +60,7 @@ dialog input{width:100%;font:inherit;padding:6px 8px;margin:4px 0 8px;border:1px
 <div id="adm" hidden></div>
 <button id="gear" title="Administration" aria-label="Administration">⚙</button>
 <div id="toast"></div>
+<dialog id="ab"><form method="dialog"><b class="gold" style="font-size:1.4rem">À propos de cette aventure</b><div id="abt"></div><div class="c"><button class="btn">Fermer</button></div></form></dialog>
 <dialog id="lg">
   <form method="dialog">
     <b class="gold" style="font-size:1.4rem">Administration</b>
@@ -119,7 +122,7 @@ async function load(){
 /* ---------- lecture ---------- */
 function home(){
   document.title=meta.serie||'La saga';
-  app.innerHTML=`<header class="hero"><h1 class="gold">${esc(meta.serie||'La saga')}</h1><div class="orn">♛</div><p class="intro">${esc(meta.intro||'')}</p></header><div class="grid" id="grid"></div><footer>${esc([meta.auteur,meta.edition].filter(Boolean).join(' — '))}</footer>`;
+  app.innerHTML=`<header class="hero"><h1 class="gold">${esc(meta.serie||'La saga')}</h1><div class="orn">♛</div><p class="intro">${esc(meta.intro||'')}</p></header><div class="grid" id="grid"></div><footer>${esc([meta.auteur,meta.edition].filter(Boolean).join(' — '))}</footer><div class="c"><button class="apb">À propos de cette aventure</button></div>`;
   const fd=$('#fond');if(meta.fond)img(meta.fond).then(d=>{if(d&&location.hash.indexOf('#/t/')!==0){fd.style.backgroundImage=`url(${d})`;fd.classList.add('on')}});
   const g=$('#grid');
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
@@ -156,6 +159,7 @@ async function read(id){
   }
   if(!bl.length)art.append(E('p','mut c','Ce tome n’a pas encore de texte.'));
   if(t.status==='wip')art.append(E('p','end gold','✍ La suite arrive…'));
+  art.append(E('p','c','<button class="apb">À propos de cette aventure</button>'));
   toc.onchange=()=>toc.value&&document.getElementById(toc.value).scrollIntoView({behavior:'smooth'});
   $('#am').onclick=()=>{localStorage.fs=Math.max(14,(+localStorage.fs||20)-1);setFs()};
   $('#ap').onclick=()=>{localStorage.fs=Math.min(34,(+localStorage.fs||20)+1);setFs()};
@@ -163,6 +167,18 @@ async function read(id){
   const k='pos-'+id,back=()=>scrollTo(0,+localStorage.getItem(k)||0);setTimeout(back,120);if(il)il.onload=back;
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
+/* à propos / crédits : discret, ouvert à la demande */
+const APROPOS=`Les illustrations sont générées par IA, d’après les dessins coloriés par des enfants.
+
+Les récits sont issus d’aventures de jeu de rôle vécues par les enfants, dont Nolhan est l’acteur principal. Ils sont retravaillés par IA, puis corrigés et ajustés par le papa de Nolhan.
+
+La musique, « D’une pensée à une autre » (double instruments), est une composition personnelle du papa de Nolhan. Son audio a été synthétisé par IA pour donner vie à la partition.`;
+function openAbout(){
+  $('#abt').innerHTML=(meta.apropos??APROPOS).split(/\n{2,}/).filter(p=>p.trim()).map(p=>`<p>${esc(p.trim())}</p>`).join('');
+  $('#ab').showModal();
+}
+$('#ab').onclick=e=>{if(e.target.id==='ab')e.target.close()};
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.apb'))openAbout()});
 /* musique d'ambiance : uniquement sur la page de la saga, coupée pendant la lecture */
 const YT_ID='fhw81AOrWlc';
 let yt,ytReady=0,ytOk=1,onHome=0,musicOn=localStorage.mu!=='off';
@@ -218,13 +234,13 @@ function adminHome(){
   const top=E('div','abar','<h2 class="gold">Administration</h2>'),cl=E('button','btn','Fermer'),lo=E('button','btn','Déconnexion');
   cl.onclick=()=>{ov.hidden=true;route()};lo.onclick=()=>signOut(auth);top.append(cl,lo);
   const s=E('section','box','<h3>La saga</h3>');
-  const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea');
+  const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea'),[ap,iap]=F('À propos / crédits (un paragraphe = une ligne vide)',meta.apropos??APROPOS,'textarea');iap.rows=9;
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
-  s.append(a,b,c,d,cw,fw,sv);
+  s.append(a,b,c,d,ap,cw,fw,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
