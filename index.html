@@ -13,12 +13,12 @@
 body{margin:0;background:radial-gradient(circle at 80% 0,#1b2f6b55,transparent 45%),var(--bg);color:var(--ink);font:18px/1.5 "Cormorant Garamond",Georgia,serif}
 a{color:inherit;text-decoration:none}
 .gold{background:linear-gradient(180deg,var(--g1),var(--g2) 50%,var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero{text-align:center;padding:44px 16px 8px}.hero h1{font-size:clamp(2.2rem,7vw,3.8rem);margin:0;line-height:1}
+.hero{text-align:center;padding:44px 16px 8px}.hero h1{font-size:clamp(2.2rem,7vw,3.8rem);margin:0;line-height:1.2}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
 .cv{cursor:zoom-in;transition:transform .35s ease,box-shadow .35s ease}.cv.zoom{transform:scale(1.6);z-index:10;box-shadow:0 16px 40px #000c}.cz{position:absolute;inset:0;background:center/cover no-repeat}
-.cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.05}
+.cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
 footer{text-align:center;color:var(--mut);padding:20px}
@@ -31,11 +31,11 @@ footer{text-align:center;color:var(--mut);padding:20px}
 @media (hover:none){#vol{display:none}}
 #fond{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat;opacity:0;transition:opacity .6s}#fond.on{opacity:1}
 #fond::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.6}
-.hero h1,.intro{text-shadow:0 2px 12px var(--bg)}
+.hero h1{filter:drop-shadow(0 2px 8px var(--bg))}.intro{text-shadow:0 2px 12px var(--bg)}
 .bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--line);z-index:5}
 .bar select,.bar button{font:inherit;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 8px;max-width:45vw}
 article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs);line-height:1.65}
-.tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.05;text-transform:uppercase;letter-spacing:.06em}.tt .ill{display:block;margin:0 auto -64px;max-width:100%;max-height:70vh;-webkit-mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);mask-composite:intersect}.tt small,.tt h1{position:relative}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
+.tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.2;text-transform:uppercase;letter-spacing:.06em}.tt .ill{display:block;margin:0 auto -64px;max-width:100%;max-height:70vh;-webkit-mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);mask-composite:intersect}.tt small,.tt h1{position:relative}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
 article p{margin:0 0 .9em;text-align:justify;hyphens:auto}
 article h2{font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);text-align:center;margin:2.4em 0 1em;letter-spacing:.02em}article h2::before{content:"";display:block;width:48px;height:1px;background:var(--g2);margin:0 auto .7em}
 .pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh}.pg figcaption{font-style:italic;color:var(--mut)}
@@ -172,11 +172,11 @@ async function read(id){
   window.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>localStorage.setItem(k,scrollY),300)};
 }
 /* à propos / crédits : discret, ouvert à la demande */
-const APROPOS=`Les récits sont issus d’aventures de jeu de rôle vécues par des enfants, dont Nolhan l’acteur principal. Ils sont retravaillés par intelligence artificielle, puis corrigés et ajustés par le papa de Nolhan.
+const APROPOS=`Les illustrations sont générées par IA, d’après les dessins coloriés par des enfants.
 
-Les illustrations sont générées par intelligence artificielle, en partie inspirées des dessins coloriés par les enfants.
+Les récits sont issus d’aventures de jeu de rôle vécues par les enfants, dont Nolhan est l’acteur principal. Ils sont retravaillés par IA, puis corrigés et ajustés par le papa de Nolhan.
 
-La musique, « D’une pensée à une autre », est une composition personnelle du papa de Nolhan. Son audio a été synthétisé par intelligence artificielle pour donner vie à la partition.`;
+La musique, « D’une pensée à une autre » (double instruments), est une composition personnelle du papa de Nolhan. Son audio a été synthétisé par IA pour donner vie à la partition.`;
 function openAbout(){
   $('#abt').innerHTML=(meta.apropos??APROPOS).split(/\n{2,}/).filter(p=>p.trim()).map(p=>`<p>${esc(p.trim())}</p>`).join('');
   $('#ab').showModal();
