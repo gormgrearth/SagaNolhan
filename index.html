@@ -185,7 +185,7 @@ let yt,ytReady=0,ytOk=1,onHome=0,musicOn=localStorage.mu!=='off';
 function ytInit(){
   const mk=()=>{yt=new YT.Player('yt',{width:'200',height:'200',videoId:YT_ID,
     playerVars:Object.assign({controls:0,disablekb:1,playsinline:1,rel:0,fs:0},location.protocol.startsWith('http')?{origin:location.origin}:{}),
-    events:{onReady:()=>{ytReady=1;yt.setVolume(60);musicSync()},
+    events:{onReady:()=>{ytReady=1;yt.setVolume(30);musicSync()},
       onStateChange:e=>{if(e.data===0){yt.seekTo(0);yt.playVideo()}},
       onError:()=>{ytOk=0;$('#mu').hidden=true}}})};
   if(window.YT&&YT.Player)return mk();
