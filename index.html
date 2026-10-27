@@ -18,12 +18,15 @@ a{color:inherit;text-decoration:none}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
-.cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
+.cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
+/* le zoom (.cvi) et l'inclinaison 3D (.cvw) sont portés par deux éléments distincts : ainsi Firefox dessine le contenu directement à la taille zoomée
+   au lieu de l'agrandir après coup pendant l'inclinaison (ce qui le rendait flou). */
+.cvi{position:relative;transform:scale(var(--sc));transition:transform .35s ease}
 /* clic droit maintenu : la carte pivote légèrement vers le pointeur */
 .cvw.zoom{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg stroke='%23000' stroke-width='3.6' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cg stroke='%23ffd36b' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23ffd36b'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23ffd36b'/%3E%3C/svg%3E") 16 16,grab}
 .cvw{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .cvw.tilting{z-index:10}.cvw.zoom.tilting,.cvw.tilting{cursor:grabbing}
-.cvw.tilting,.cvw.waving{transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .08s linear}
+.cvw.tilting,.cvw.waving{transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .08s linear}
 /* profondeur : l'illustration (.cz) est « reculée » derrière le cadre. Une ombre intérieure (.dp) le suggère au repos ;
    à l'inclinaison, l'illustration glisse légèrement par rapport au cadre (parallaxe, --px/--py en % de la carte).
    Le léger agrandissement (1.04) évite de découvrir le fond sur les bords. */
@@ -172,8 +175,8 @@ function home(){
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
   tomes.forEach(t=>{
     const c=E('a','card');c.href='#/t/'+t.id;
-    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sg"></i><i class="dp"></i></div>${chl(t)}</div><div class="st">${badge(t)}</div>`;
-    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);buildFx(w,meta.fx);zoomable(w);tiltable(w);touchable(w);g.append(c);
+    c.innerHTML=`<div class="cvw"><div class="cvi"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sg"></i><i class="dp"></i></div>${chl(t)}</div></div><div class="st">${badge(t)}</div>`;
+    const w=c.firstChild;setBg(w.querySelector('.cz'),t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);buildFx(w,meta.fx);zoomable(w);tiltable(w);touchable(w);g.append(c);
   });
   planWave(g);
 }
@@ -185,7 +188,7 @@ function buildFx(w,fx){
   const d=E('div','fx fx-'+fx);
   if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--turn',((+meta.fxTurns||1.15)*360)+'deg')}
   if(fx==='sweep')d.innerHTML='<i class="rg"><i class="sp"></i></i>';
-  w.append(d);
+  (w.querySelector('.cvi')||w).append(d);
   if(fx==='aura')auraFx(w,d);
   if(fx==='fire')fireFx(w,d,+meta.fxDur||12);
 }
@@ -330,7 +333,7 @@ function tiltable(w){
   const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');pose(w,0,0)};
   w.addEventListener('pointerdown',e=>{
     if(e.pointerType!=='mouse'||e.button!==2)return;
-    id=e.pointerId;r=w.getBoundingClientRect();try{w.setPointerCapture(id)}catch{}
+    id=e.pointerId;r=w.querySelector('.cvi').getBoundingClientRect();try{w.setPointerCapture(id)}catch{}
     w.classList.add('tilting');aim(e);
   });
   w.addEventListener('pointermove',e=>{if(e.pointerId===id)aim(e)});
