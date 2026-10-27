@@ -18,12 +18,13 @@ a{color:inherit;text-decoration:none}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
-.cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
+.cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
 /* clic droit maintenu : la carte pivote légèrement vers le pointeur */
 .cvw.zoom{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg stroke='%23000' stroke-width='3.6' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cg stroke='%23ffd36b' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23ffd36b'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23ffd36b'/%3E%3C/svg%3E") 16 16,grab}
 .cvw{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.cvw.ready{will-change:transform}
 .cvw.tilting{z-index:10}.cvw.zoom.tilting,.cvw.tilting{cursor:grabbing}
-.cvw.tilting,.cvw.waving{transition:transform .08s linear}
+.cvw.tilting,.cvw.waving{transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .08s linear}
 /* profondeur : l'illustration (.cz) est « reculée » derrière le cadre. Une ombre intérieure (.dp) le suggère au repos ;
    à l'inclinaison, l'illustration glisse légèrement par rapport au cadre (parallaxe, --px/--py en % de la carte).
    Le léger agrandissement (1.04) évite de découvrir le fond sur les bords. */
@@ -301,8 +302,8 @@ function fireFx(w,d,dur){
 }
 function zoomable(w){
   let t,on=0;
-  const zoomOn=()=>{if(on)return;on=1;w.classList.add('zoom');w.dispatchEvent(new Event('fxstart'))};
-  const off=()=>{clearTimeout(t);if(on)w.dispatchEvent(new Event('fxstop'));on=0;w.classList.remove('zoom')};
+  let rt;const zoomOn=()=>{if(on)return;on=1;w.classList.add('zoom');w.dispatchEvent(new Event('fxstart'));clearTimeout(rt);rt=setTimeout(()=>{if(on)w.classList.add('ready')},450)};
+  const off=()=>{clearTimeout(t);clearTimeout(rt);w.classList.remove('ready');if(on)w.dispatchEvent(new Event('fxstop'));on=0;w.classList.remove('zoom')};
   w._z={on:zoomOn,off};/* utilisé par le tactile (touchable) */
   w.onpointermove=e=>{
     if(e.pointerType!=='mouse'||on)return;
