@@ -18,7 +18,16 @@ a{color:inherit;text-decoration:none}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
-.cvw{position:relative;cursor:zoom-in;transition:transform .35s ease}.cvw.zoom{transform:scale(1.6);z-index:10}
+.cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
+/* clic droit maintenu : la carte pivote légèrement vers le pointeur */
+.cvw.tilting{z-index:10;cursor:grabbing;transition:transform .08s linear}
+/* brillance permanente : reflet qui balaie la carte (.sh) + reflet ponctuel qui suit le pointeur pendant l'inclinaison (.sg).
+   Dans .cv, donc SOUS le canvas de la combustion : la partie brûlée (charbon opaque) n'est pas brillante. */
+.sh,.sg{position:absolute;inset:0;pointer-events:none;opacity:var(--shine,.6)}
+.sh{background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.14) 45%,rgba(255,246,214,.4) 50%,rgba(255,255,255,.14) 55%,transparent 62%) 140% 0/260% 100% no-repeat;animation:shine 7s ease-in-out infinite;animation-delay:var(--sd,0s)}
+@keyframes shine{0%{background-position:140% 0}45%,100%{background-position:-40% 0}}
+.sg{background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.45),rgba(255,236,190,.12) 35%,transparent 62%);opacity:0;transition:opacity .25s}
+.cvw.tilting .sg{opacity:var(--shine,.6)}.cvw.tilting .sh{animation-play-state:paused}
 .cv{transition:box-shadow .35s ease}.cvw.zoom .cv{box-shadow:0 16px 40px #000c}
 /* effets au zoom d'une couverture (choisis en administration) */
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
@@ -37,7 +46,7 @@ a{color:inherit;text-decoration:none}
 .cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 14px 1px rgba(255,214,102,.3),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
-@media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
+@media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}.sh{animation:none;opacity:0}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
@@ -65,6 +74,7 @@ article h2{font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);t
 .abar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 0;background:var(--bg);z-index:3;flex-wrap:wrap}.abar h2{margin:0 auto 0 0}
 .box{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px auto;max-width:760px}.box h3{margin:0 0 8px;color:var(--g2)}
 .box label{display:block;font-weight:700;margin:8px 0 2px}
+.box input[type=range]{padding:0;border:0;accent-color:var(--g2)}
 .box input,.box textarea,.box select{width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
 .btn,.mini{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--g2);background:transparent;color:var(--g2);padding:5px 12px;border-radius:8px}
 .main{background:var(--g2);color:#1b1500}.mini{padding:0 8px;margin-left:4px}
@@ -152,8 +162,8 @@ function home(){
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
   tomes.forEach(t=>{
     const c=E('a','card');c.href='#/t/'+t.id;
-    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}</div></div><div class="st">${badge(t)}</div>`;
-    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);buildFx(w,meta.fx);zoomable(w);g.append(c);
+    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sh"></i><i class="sg"></i></div></div><div class="st">${badge(t)}</div>`;
+    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);w.style.setProperty('--sd','-'+(Math.random()*7).toFixed(1)+'s');buildFx(w,meta.fx);zoomable(w);tiltable(w);g.append(c);
   });
 }
 /* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
@@ -287,6 +297,23 @@ function zoomable(w){
   };
   w.onpointerleave=off;
 }
+/* clic droit maintenu sur une couverture : elle pivote légèrement vers le pointeur (le menu contextuel est désactivé sur les couvertures) */
+function tiltable(w){
+  const MAX=9;let id=null,r;
+  const aim=e=>{
+    const x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)),S=(k,v)=>w.style.setProperty(k,v);
+    S('--ry',((x-.5)*2*MAX).toFixed(1)+'deg');S('--rx',((.5-y)*2*MAX).toFixed(1)+'deg');S('--mx',(x*100).toFixed(0)+'%');S('--my',(y*100).toFixed(0)+'%');
+  };
+  const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');w.style.setProperty('--rx','0deg');w.style.setProperty('--ry','0deg')};
+  w.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='mouse'||e.button!==2)return;
+    id=e.pointerId;r=w.getBoundingClientRect();try{w.setPointerCapture(id)}catch{}
+    w.classList.add('tilting');aim(e);
+  });
+  w.addEventListener('pointermove',e=>{if(e.pointerId===id)aim(e)});
+  w.addEventListener('pointerup',end);w.addEventListener('pointercancel',end);
+  w.addEventListener('contextmenu',e=>e.preventDefault());
+}
 let tm;
 async function read(id){
   const t=tomes.find(x=>x.id===id);if(!t){location.hash='#/';return}
@@ -388,16 +415,28 @@ function adminHome(){
   const s=E('section','box','<h3>La saga</h3>');
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea'),[ap,iap]=F('À propos / crédits (un paragraphe = une ligne vide)',meta.apropos??APROPOS,'textarea');iap.rows=9;
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fxDur:+idl.value||0,fxTurns:+itl.value||0,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fxDur:['sweep','fire'].includes(fxs.value)?+idl.value:0,fxTurns:fxs.value==='sweep'?+itl.value:0,shine:+ish.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
   const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
-  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
+  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo de lumière qui varie autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
   fxs.value=meta.fx||'';fxl.append(fxs);
-  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 12 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
-  idl.type=itl.type='number';idl.step=itl.step='0.1';idl.min=itl.min='0.5';
-  s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,sv);
+  const G=(txt,mn,mx,st,v,fmt)=>{const w=E('label'),t=E('span'),i=E('input'),tx=typeof txt==='function'?txt:()=>txt;i.type='range';i.min=mn;i.max=mx;i.step=st;i.value=v;const up=()=>{t.textContent=tx()+' : '+fmt(+i.value)};i.oninput=up;up();w.append(t,i);return[w,i]};
+  let dtxt='Durée de l’effet';
+  const [dl,idl]=G(()=>dtxt,1,10,.1,3.4,v=>v.toLocaleString('fr-FR')+' s'),[trl,itl]=G('Nombre de tours de lumière',.5,3,.05,meta.fxTurns||1.15,v=>v.toLocaleString('fr-FR')),[shl,ish]=G('Brillance permanente des couvertures (0 = aucune)',0,100,5,meta.shine==null?60:meta.shine,v=>v+' %');
+  /* les jauges d'un effet n'apparaissent que si l'effet choisi les utilise */
+  const sync=()=>{
+    const f=fxs.value,sw=f==='sweep',fi=f==='fire';
+    dl.style.display=sw||fi?'':'none';trl.style.display=sw?'':'none';
+    if(sw||fi){
+      const [mn,mx,st,df]=sw?[1,10,.1,3.4]:[4,30,1,12];
+      dtxt=sw?'Durée du tour de lumière':'Durée jusqu’à la carte entièrement consumée';
+      idl.min=mn;idl.max=mx;idl.step=st;idl.value=(meta.fx===f&&+meta.fxDur>0)?meta.fxDur:df;idl.dispatchEvent(new Event('input'));
+    }
+  };
+  fxs.onchange=sync;sync();
+  s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,shl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
