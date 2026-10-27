@@ -21,13 +21,15 @@ a{color:inherit;text-decoration:none}
 .cv{transition:box-shadow .35s ease}.cvw.zoom .cv{box-shadow:0 16px 40px #000c}
 /* effets au zoom d'une couverture (choisis en administration) */
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
-@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
-.fx-sweep{inset:-4px;border-radius:10px;padding:2px;background:conic-gradient(from var(--a),transparent 0deg,transparent 250deg,rgba(255,190,65,.04) 270deg,rgba(255,205,90,.22) 292deg,rgba(255,235,160,.92) 307deg,rgba(255,255,238,1) 315deg,rgba(255,220,125,.72) 322deg,rgba(255,160,35,.12) 338deg,transparent 350deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 2px rgba(255,245,190,.95)) drop-shadow(0 0 6px rgba(255,194,65,.8)) drop-shadow(0 0 13px rgba(255,130,25,.35))}
-.cvw.zoom .fx-sweep{animation:orbit var(--dur,3.4s) cubic-bezier(.35,.05,.25,1) 1 both,glow var(--dur,3.4s) ease-in-out 1 both}
-@keyframes orbit{from{--a:0deg}to{--a:var(--turn,414deg)}}
-@keyframes glow{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
-.fx-aura{inset:-24px;border-radius:16px;isolation:isolate}.fx-aura::before,.fx-aura::after{content:"";position:absolute;inset:12px;border-radius:10px;pointer-events:none;opacity:0;filter:blur(18px);background:radial-gradient(ellipse at 50% 48%,rgba(255,228,140,.18),rgba(255,190,65,.15) 42%,rgba(255,145,25,.08) 66%,transparent 76%);animation:auraBreath 4.8s ease-in-out infinite alternate}.fx-aura::after{inset:0;filter:blur(28px);background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(255,215,105,.18) 58%,rgba(255,165,45,.1) 72%,transparent 84%);animation-delay:-2.4s}.fx-aura .wv{position:absolute;inset:0;opacity:0;will-change:transform,opacity;mix-blend-mode:screen}@keyframes auraBreath{0%{opacity:.2;transform:scale(.94)}100%{opacity:.9;transform:scale(1.08)}}
-.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 18px 2px rgba(255,238,170,.42),0 0 42px 10px rgba(255,190,65,.28),0 0 76px 18px rgba(255,145,25,.13),0 16px 40px #000c}
+/* Éclat : contour complet, animation de luminosité compatible Firefox/Edge */
+.fx-sweep{inset:-5px;border:2px solid rgba(255,239,170,.95);border-radius:10px;box-shadow:0 0 3px 1px rgba(255,255,235,.95),0 0 9px 3px rgba(255,203,82,.85),0 0 20px 6px rgba(255,137,24,.42);opacity:.25}
+.cvw.zoom .fx-sweep{animation:edgePulse var(--dur,3.4s) ease-in-out 1 both}
+@keyframes edgePulse{0%{opacity:.15;filter:brightness(.8)}18%{opacity:.9;filter:brightness(1.15)}48%{opacity:1;filter:brightness(1.45)}78%{opacity:.8;filter:brightness(1.1)}100%{opacity:.25;filter:brightness(.9)}}
+/* Aura : halo stable autour de la carte, seule son intensité respire doucement */
+.fx-aura{inset:-30px;border-radius:18px;box-shadow:0 0 18px 4px rgba(255,231,145,.24),0 0 38px 12px rgba(255,190,65,.22),0 0 68px 22px rgba(255,135,25,.12);animation:auraBreath 5.5s ease-in-out infinite alternate}
+.fx-aura::before{content:"";position:absolute;inset:16px;border-radius:12px;pointer-events:none;box-shadow:0 0 18px 5px rgba(255,233,155,.22),0 0 34px 10px rgba(255,181,48,.16);opacity:.6}
+@keyframes auraBreath{0%{opacity:.42;filter:brightness(.8)}100%{opacity:1;filter:brightness(1.25)}}
+.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 18px 2px rgba(255,238,170,.35),0 0 42px 10px rgba(255,190,65,.23),0 0 76px 18px rgba(255,145,25,.11),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
 @media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
@@ -158,31 +160,17 @@ function buildFx(w,fx){
   if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--turn',((+meta.fxTurns||1.15)*360)+'deg')}
   w.append(d);
   if(fx==='aura')auraFx(w,d);
-  if(fx==='fire')fireFx(w,d,+meta.fxDur||24);
+  if(fx==='fire')fireFx(w,d,+meta.fxDur||30);
 }
-/* Aura : vagues aléatoires (forme, étendue, durée, décalage, chevauchement) */
+/* Aura : halo lumineux régulier, sans vagues ni déplacements aléatoires */
 function auraFx(w,d){
-  const R=(a,b)=>a+Math.random()*(b-a);
-  const ws=Array.from({length:6},()=>{const e=E('i','wv');d.append(e);return e});
-  let on=0,tm=[];
-  const wave=e=>{
-    if(!on)return;
-    const sx=R(1.1,1.75),sy=R(1.06,1.5),dx=R(-14,14),dy=R(-14,14),rot=R(-5,5),dur=R(1500,4400),o=R(.25,.8),bl=R(12,36),sp=R(1,10);
-    e.style.borderRadius=`${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% / ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}%`;
-    e.style.boxShadow=`0 0 ${bl.toFixed(0)}px ${sp.toFixed(0)}px rgba(255,${R(190,225)|0},${R(80,140)|0},.9),inset 0 0 ${(bl*.6).toFixed(0)}px rgba(255,214,102,.35)`;
-    const a=e.animate([
-      {transform:'translate(0,0) scale(1) rotate(0deg)',opacity:o},
-      {offset:R(.3,.6),opacity:o*R(.35,.7)},
-      {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy}) rotate(${rot}deg)`,opacity:0}
-    ],{duration:dur,easing:'ease-out',fill:'both'});
-    a.onfinish=()=>{if(on)tm.push(setTimeout(()=>wave(e),R(0,900)+(Math.random()<.25?R(800,2200):0)))};
-  };
-  w.addEventListener('fxstart',()=>{on=1;ws.forEach(e=>tm.push(setTimeout(()=>wave(e),R(0,2200))))});
-  w.addEventListener('fxstop',()=>{on=0;tm.forEach(clearTimeout);tm=[];ws.forEach(e=>e.getAnimations().forEach(a=>a.cancel()))});
+  // Le halo est entièrement réalisé en CSS pour rester fluide dans Firefox et Edge.
+  d.setAttribute('aria-hidden','true');
 }
 /* Combustion : la carte se consume lentement depuis un coin du bas (bord incandescent, roussi, charbon, flammes, étincelles, fumée) */
 function fireFx(w,d,dur){
   const PAD=50,S=1.25,cv=w.querySelector('.cv'),cnv=E('canvas'),ctx=cnv.getContext('2d');d.append(cnv);
+  const coverImg=new Image();coverImg.crossOrigin='anonymous';const bgEl=cv.querySelector('.cz');const bg=(bgEl&&getComputedStyle(bgEl).backgroundImage.match(/^url\([\"']?(.*?)[\"']?\)$/)||[])[1];if(bg)coverImg.src=bg;
   const imul=Math.imul;
   const hash=(x,y,s)=>{let h=imul(x,374761393)+imul(y,668265263)+imul(s,1442695041)|0;h=imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
   const vn=(x,y,s)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),e=hash(xi+1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+e)*u*v};
@@ -206,10 +194,10 @@ function fireFx(w,d,dur){
       T[i]=v;if(v<mn)mn=v;if(v>mx)mx=v;R[i]=fbm(x/(3*S),y/(3*S),seed+23,2);M[i]=fbm(x/(14*S),y/(14*S),seed+31,2);
     }
     const P0=mn-.14,P1=mx+.11;
-    const ic=mk(SW,SH,()=>{}),ictx=ic.getContext('2d'),gc=mk(SW,SH,()=>{}),gctx=gc.getContext('2d');
+    const ic=mk(SW,SH,()=>{}),ictx=ic.getContext('2d'),gc=mk(SW,SH,()=>{}),gctx=gc.getContext('2d'),basec=mk(SW,SH,()=>{}),basectx=basec.getContext('2d'),maskc=mk(SW,SH,()=>{}),maskctx=maskc.getContext('2d');
     const sc=mk(Math.max(8,Math.round(SW/5)),Math.max(8,Math.round(SH/5)),()=>{}),sctx=sc.getContext('2d');
     const bc=mk(cnv.width,cnv.height,()=>{}),bctx=bc.getContext('2d');
-    const img=ictx.createImageData(SW,SH),px=img.data,gimg=gctx.createImageData(SW,SH),gd=gimg.data;
+    const img=ictx.createImageData(SW,SH),px=img.data,gimg=gctx.createImageData(SW,SH),gd=gimg.data,maskImg=basectx.createImageData(SW,SH),mdp=maskImg.data;
     const parts=[];let front=500,lastSim=0,last=performance.now();
     const t0=last;run=t0;
     const frame=now=>{
@@ -221,7 +209,7 @@ function fireFx(w,d,dur){
         lastSim=now;
         const off=(((now/90)|0)*7919)%N,q=Math.min(1,3/Math.max(1,front)),cand=[];let cnt=0;
         for(let i=0,j=0;i<N;i++,j+=4){
-          const dd=T[i]-p;let r=0,g=0,b=0,a=0,gA=0;
+          const dd=T[i]-p;let r=0,g=0,b=0,a=0,gA=0;mdp[j]=mdp[j+1]=mdp[j+2]=0;mdp[j+3]=dd<0?255:(dd<.045?Math.round((1-dd/.045)*210):0);
           if(dd<.14){
             if(dd>0){
               const kk=(1-dd/.14)*(1-dd/.14);a=kk*.8*(.6+.8*R[i]);r=48;g=27;b=8;
@@ -243,9 +231,13 @@ function fireFx(w,d,dur){
         front=cnt;
         ictx.putImageData(img,0,0);gctx.putImageData(gimg,0,0);
         sctx.clearRect(0,0,sc.width,sc.height);sctx.drawImage(gc,0,0,sc.width,sc.height);
+        // Repeint la couverture puis efface progressivement la zone déjà consumée.
+        basectx.clearRect(0,0,SW,SH);
+        if(coverImg.complete&&coverImg.naturalWidth){const scale=Math.max(SW/coverImg.naturalWidth,SH/coverImg.naturalHeight),dw=coverImg.naturalWidth*scale,dh=coverImg.naturalHeight*scale;basectx.drawImage(coverImg,(SW-dw)/2,(SH-dh)/2,dw,dh)}else{basectx.fillStyle='#17120e';basectx.fillRect(0,0,SW,SH)}
+        maskctx.putImageData(maskImg,0,0);basectx.globalCompositeOperation='destination-out';basectx.drawImage(maskc,0,0);basectx.globalCompositeOperation='source-over';basectx.drawImage(ic,0,0);
         bctx.setTransform(1,0,0,1,0,0);bctx.clearRect(0,0,bc.width,bc.height);bctx.setTransform(K,0,0,K,PAD*K,PAD*K);
         bctx.save();bctx.beginPath();if(bctx.roundRect)bctx.roundRect(0,0,W,H,6);else bctx.rect(0,0,W,H);bctx.clip();
-        bctx.imageSmoothingEnabled=true;bctx.drawImage(ic,0,0,W,H);
+        bctx.imageSmoothingEnabled=true;bctx.drawImage(basec,0,0,W,H);
         bctx.globalCompositeOperation='lighter';bctx.globalAlpha=.55;bctx.drawImage(sc,0,0,W,H);bctx.restore();
         if(parts.length<450)cand.forEach(i=>{
           const x=(i%SW)/S,y=((i/SW)|0)/S;
@@ -388,7 +380,7 @@ function adminHome(){
   const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
   [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
   fxs.value=meta.fx||'';fxl.append(fxs);
-  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 24 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
+  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 30 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
   idl.type=itl.type='number';idl.step=itl.step='0.1';idl.min=itl.min='0.5';
   s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
