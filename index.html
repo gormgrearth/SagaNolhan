@@ -32,8 +32,8 @@ a{color:inherit;text-decoration:none}
 .cvw.zoom .fx-sweep .sp{animation:orbit var(--dur,3.4s) cubic-bezier(.45,.05,.55,.95) 1 both}
 @keyframes orbit{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(var(--turn,414deg))}}
 @keyframes glow{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
-.fx-aura{inset:0}.fx-aura .wv{position:absolute;inset:0;opacity:0;will-change:transform,opacity}
-.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 30px 6px rgba(255,214,102,.42),0 16px 40px #000c}
+.fx-aura{inset:0;border-radius:6px}.fx-aura .wv{position:absolute;inset:0;border-radius:6px;opacity:0;will-change:box-shadow,opacity}
+.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 14px 1px rgba(255,214,102,.3),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
 @media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
@@ -167,25 +167,24 @@ function buildFx(w,fx){
   if(fx==='aura')auraFx(w,d);
   if(fx==='fire')fireFx(w,d,+meta.fxDur||12);
 }
-/* Aura : vagues aléatoires (forme, étendue, durée, décalage, chevauchement) */
+/* Aura : lumière qui épouse la carte. Trois calques dont l'intensité, la teinte, le flou et le léger décalage
+   varient en continu, sans jamais grossir : le halo reste serré autour de la carte (pas de pulsation vers l'extérieur). */
 function auraFx(w,d){
   const R=(a,b)=>a+Math.random()*(b-a);
-  const ws=Array.from({length:6},()=>{const e=E('i','wv');d.append(e);return e});
+  const ws=Array.from({length:3},()=>{const e=E('i','wv');d.append(e);return e});
   let on=0,tm=[];
-  const wave=e=>{
-    if(!on)return;
-    const sx=R(1.1,1.75),sy=R(1.06,1.5),dx=R(-14,14),dy=R(-14,14),rot=R(-5,5),dur=R(1500,4400),o=R(.25,.8),bl=R(12,36),sp=R(1,10);
-    e.style.borderRadius=`${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% / ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}%`;
-    e.style.boxShadow=`0 0 ${bl.toFixed(0)}px ${sp.toFixed(0)}px rgba(255,${R(190,225)|0},${R(80,140)|0},.9),inset 0 0 ${(bl*.6).toFixed(0)}px rgba(255,214,102,.35)`;
-    const a=e.animate([
-      {transform:'translate(0,0) scale(1) rotate(0deg)',opacity:o},
-      {offset:R(.3,.6),opacity:o*R(.35,.7)},
-      {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy}) rotate(${rot}deg)`,opacity:0}
-    ],{duration:dur,easing:'ease-out',fill:'both'});
-    a.onfinish=()=>{if(on)tm.push(setTimeout(()=>wave(e),R(0,900)+(Math.random()<.25?R(800,2200):0)))};
+  const state=()=>{
+    const bl=R(10,26),sp=R(0,3),dx=R(-5,5),dy=R(-5,5);
+    return{boxShadow:`${dx.toFixed(1)}px ${dy.toFixed(1)}px ${bl.toFixed(0)}px ${sp.toFixed(1)}px rgba(255,${R(185,225)|0},${R(70,130)|0},${R(.55,.95).toFixed(2)}),inset 0 0 ${(bl*.5).toFixed(0)}px rgba(255,214,102,${R(.12,.4).toFixed(2)})`,opacity:R(.25,1)};
   };
-  w.addEventListener('fxstart',()=>{on=1;ws.forEach(e=>tm.push(setTimeout(()=>wave(e),R(0,2200))))});
-  w.addEventListener('fxstop',()=>{on=0;tm.forEach(clearTimeout);tm=[];ws.forEach(e=>e.getAnimations().forEach(a=>a.cancel()))});
+  const step=(e,from)=>{
+    if(!on)return;
+    const to=state();
+    const a=e.animate([from,to],{duration:R(900,2600),easing:'ease-in-out',fill:'forwards'});
+    a.onfinish=()=>{if(!on)return;e.style.boxShadow=to.boxShadow;e.style.opacity=to.opacity;a.cancel();step(e,to)};
+  };
+  w.addEventListener('fxstart',()=>{on=1;ws.forEach((e,i)=>{const s0=state();s0.opacity=0;tm.push(setTimeout(()=>step(e,s0),i*350))})});
+  w.addEventListener('fxstop',()=>{on=0;tm.forEach(clearTimeout);tm=[];ws.forEach(e=>{e.getAnimations().forEach(a=>a.cancel());e.style.opacity=0})});
 }
 /* Combustion : la carte se consume lentement depuis un coin du bas (bord incandescent, roussi, charbon, flammes, étincelles, fumée) */
 function fireFx(w,d,dur){
