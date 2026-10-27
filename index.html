@@ -22,21 +22,14 @@ a{color:inherit;text-decoration:none}
 /* effets au zoom d'une couverture (choisis en administration) */
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
 @property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
-.fx-sweep{inset:-3px;border-radius:9px;padding:3px;background:conic-gradient(from var(--a),transparent 0deg,transparent 240deg,rgba(255,224,130,.2) 290deg,rgba(255,238,170,.9) 342deg,#fff 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 5px #ffd86b) drop-shadow(0 0 14px #ffb83a)}
-.cvw.zoom .fx-sweep{animation:orbit 1.7s cubic-bezier(.45,0,.25,1) 1 both}
-@keyframes orbit{0%{--a:0deg;opacity:0}8%{opacity:1}86%{opacity:1}100%{--a:360deg;opacity:0}}
-.fx-aura{inset:0;border-radius:8px}
-.fx-aura::before,.fx-aura::after{content:"";position:absolute;inset:0;border-radius:8px;box-shadow:0 0 22px 6px rgba(255,214,102,.6),inset 0 0 18px rgba(255,214,102,.3);animation:aura 2.4s ease-out infinite}
-.fx-aura::after{animation-delay:1.2s}
-@keyframes aura{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.32,1.22);opacity:0}}
-.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 34px 8px rgba(255,214,102,.5),0 16px 40px #000c}
-.fx-fire{inset:0}
-.fx-fire::before{content:"";position:absolute;inset:-12px;border-radius:18px;box-shadow:0 0 26px 8px rgba(255,110,20,.55),0 0 64px 18px rgba(255,60,0,.25);animation:flick .45s ease-in-out infinite alternate}
-@keyframes flick{from{opacity:.7}to{opacity:1}}
-.fx-fire .fl{position:absolute;bottom:-5px;width:18px;margin-left:-9px;border-radius:50% 50% 25% 25%/70% 70% 30% 30%;background:linear-gradient(to top,#ff4d00,#ff9d1a 55%,rgba(255,225,120,0));transform-origin:50% 100%;animation:flame var(--t) ease-in-out infinite alternate;animation-delay:var(--d);opacity:.9}
-@keyframes flame{0%{transform:scaleY(.7) skewX(-8deg)}50%{transform:scaleY(1.15) skewX(6deg)}100%{transform:scaleY(.85) skewX(-4deg)}}
-.fx-fire .em{position:absolute;bottom:0;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(#fff6c0,#ffa020 55%,transparent 72%);box-shadow:0 0 6px 1px #ff8a1a;opacity:0;animation:ember var(--t) ease-out infinite;animation-delay:var(--d)}
-@keyframes ember{0%{transform:translate(0,0) scale(1);opacity:0}12%{opacity:1}100%{transform:translate(var(--dx),-130px) scale(.2);opacity:0}}
+.fx-sweep{inset:-3px;border-radius:9px;padding:2px;background:conic-gradient(from var(--a),transparent 0deg,transparent 190deg,rgba(255,214,120,.05) 225deg,rgba(255,220,130,.16) 270deg,rgba(255,232,160,.4) 312deg,rgba(255,246,208,.88) 340deg,rgba(255,250,232,.3) 352deg,transparent 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 3px rgba(255,214,110,.7)) drop-shadow(0 0 9px rgba(255,180,60,.45))}
+.cvw.zoom .fx-sweep{animation:orbit var(--dur,3.4s) cubic-bezier(.45,.05,.55,.95) 1 both,glow var(--dur,3.4s) ease-in-out 1 both}
+@keyframes orbit{from{--a:0deg}to{--a:var(--turn,414deg)}}
+@keyframes glow{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.fx-aura{inset:0}.fx-aura .wv{position:absolute;inset:0;opacity:0;will-change:transform,opacity}
+.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 30px 6px rgba(255,214,102,.42),0 16px 40px #000c}
+.fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
+.cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
 @media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
@@ -159,22 +152,131 @@ function home(){
 /* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
 function buildFx(w,fx){
   if(!['sweep','aura','fire'].includes(fx))return;
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   w.dataset.fx=fx;
-  const d=E('div','fx fx-'+fx),r=Math.random;
-  if(fx==='fire'){
-    let h='';
-    for(let i=0;i<14;i++)h+=`<i class="fl" style="left:${(4+i*7.2).toFixed(1)}%;height:${24+(r()*22|0)}px;--t:${(.35+r()*.4).toFixed(2)}s;--d:-${(r()*.8).toFixed(2)}s"></i>`;
-    for(let i=0;i<16;i++)h+=`<i class="em" style="--x:${(r()*110-5).toFixed(0)}%;--s:${(2+r()*3).toFixed(1)}px;--t:${(1.2+r()*1.4).toFixed(2)}s;--d:-${(r()*2).toFixed(2)}s;--dx:${(r()*44-22)|0}px"></i>`;
-    d.innerHTML=h;
-  }
+  const d=E('div','fx fx-'+fx);
+  if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--turn',((+meta.fxTurns||1.15)*360)+'deg')}
   w.append(d);
+  if(fx==='aura')auraFx(w,d);
+  if(fx==='fire')fireFx(w,d,+meta.fxDur||12);
+}
+/* Aura : vagues aléatoires (forme, étendue, durée, décalage, chevauchement) */
+function auraFx(w,d){
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const ws=Array.from({length:6},()=>{const e=E('i','wv');d.append(e);return e});
+  let on=0,tm=[];
+  const wave=e=>{
+    if(!on)return;
+    const sx=R(1.1,1.75),sy=R(1.06,1.5),dx=R(-14,14),dy=R(-14,14),rot=R(-5,5),dur=R(1500,4400),o=R(.25,.8),bl=R(12,36),sp=R(1,10);
+    e.style.borderRadius=`${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% ${R(3,18).toFixed(1)}% / ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}% ${R(2,12).toFixed(1)}%`;
+    e.style.boxShadow=`0 0 ${bl.toFixed(0)}px ${sp.toFixed(0)}px rgba(255,${R(190,225)|0},${R(80,140)|0},.9),inset 0 0 ${(bl*.6).toFixed(0)}px rgba(255,214,102,.35)`;
+    const a=e.animate([
+      {transform:'translate(0,0) scale(1) rotate(0deg)',opacity:o},
+      {offset:R(.3,.6),opacity:o*R(.35,.7)},
+      {transform:`translate(${dx}px,${dy}px) scale(${sx},${sy}) rotate(${rot}deg)`,opacity:0}
+    ],{duration:dur,easing:'ease-out',fill:'both'});
+    a.onfinish=()=>{if(on)tm.push(setTimeout(()=>wave(e),R(0,900)+(Math.random()<.25?R(800,2200):0)))};
+  };
+  w.addEventListener('fxstart',()=>{on=1;ws.forEach(e=>tm.push(setTimeout(()=>wave(e),R(0,2200))))});
+  w.addEventListener('fxstop',()=>{on=0;tm.forEach(clearTimeout);tm=[];ws.forEach(e=>e.getAnimations().forEach(a=>a.cancel()))});
+}
+/* Combustion : la carte se consume lentement depuis un coin du bas (bord incandescent, roussi, charbon, flammes, étincelles, fumée) */
+function fireFx(w,d,dur){
+  const PAD=50,S=1.25,cv=w.querySelector('.cv'),cnv=E('canvas'),ctx=cnv.getContext('2d');d.append(cnv);
+  const imul=Math.imul;
+  const hash=(x,y,s)=>{let h=imul(x,374761393)+imul(y,668265263)+imul(s,1442695041)|0;h=imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
+  const vn=(x,y,s)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),e=hash(xi+1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+e)*u*v};
+  const fbm=(x,y,s,o)=>{let t=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){t+=a*vn(x*f,y*f,s+i);n+=a;f*=2;a*=.5}return t/n};
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const mk=(wd,ht,fn)=>{const c=document.createElement('canvas');c.width=wd;c.height=ht;fn(c.getContext('2d'));return c};
+  const flame=mk(40,110,g=>{g.translate(20,72);g.scale(1,1.9);const r=g.createRadialGradient(0,0,1,0,0,19);r.addColorStop(0,'rgba(255,238,170,.85)');r.addColorStop(.25,'rgba(255,180,60,.8)');r.addColorStop(.55,'rgba(255,95,15,.45)');r.addColorStop(1,'rgba(190,25,0,0)');g.fillStyle=r;g.beginPath();g.arc(0,0,19,0,7);g.fill()});
+  const spark=mk(16,16,g=>{const r=g.createRadialGradient(8,8,0,8,8,8);r.addColorStop(0,'rgba(255,240,180,1)');r.addColorStop(.4,'rgba(255,150,40,.8)');r.addColorStop(1,'rgba(255,80,0,0)');g.fillStyle=r;g.fillRect(0,0,16,16)});
+  const smoke=mk(64,64,g=>{const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(95,86,80,.55)');r.addColorStop(1,'rgba(95,86,80,0)');g.fillStyle=r;g.fillRect(0,0,64,64)});
+  let raf=0,run=null;
+  const stop=()=>{if(raf)cancelAnimationFrame(raf);raf=0;run=null;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cnv.width,cnv.height)};
+  const start=()=>{
+    stop();
+    const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;
+    const SW=Math.round(W*S),SH=Math.round(H*S),N=SW*SH,K=Math.min(3,(devicePixelRatio||1)*1.6);
+    cnv.width=Math.round((W+2*PAD)*K);cnv.height=Math.round((H+2*PAD)*K);
+    const seed=(Math.random()*9999)|0,ox=Math.random()<.5?SW:0,oy=SH,md=Math.hypot(SW,SH);
+    const T=new Float32Array(N),R=new Float32Array(N),M=new Float32Array(N);let mn=9,mx=-9;
+    for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){
+      const i=y*SW+x,v=Math.hypot(x-ox,y-oy)/md*.8+fbm(x/(38*S),y/(38*S),seed,4)*.22+fbm(x/(8*S),y/(8*S),seed+11,2)*.05;
+      T[i]=v;if(v<mn)mn=v;if(v>mx)mx=v;R[i]=fbm(x/(3*S),y/(3*S),seed+23,2);M[i]=fbm(x/(14*S),y/(14*S),seed+31,2);
+    }
+    const P0=mn-.14,P1=mx+.11;
+    const ic=mk(SW,SH,()=>{}),ictx=ic.getContext('2d'),gc=mk(SW,SH,()=>{}),gctx=gc.getContext('2d');
+    const sc=mk(Math.max(8,Math.round(SW/5)),Math.max(8,Math.round(SH/5)),()=>{}),sctx=sc.getContext('2d');
+    const bc=mk(cnv.width,cnv.height,()=>{}),bctx=bc.getContext('2d');
+    const img=ictx.createImageData(SW,SH),px=img.data,gimg=gctx.createImageData(SW,SH),gd=gimg.data;
+    const parts=[];let front=500,lastSim=0,last=performance.now();
+    const t0=last;run=t0;
+    const frame=now=>{
+      if(run!==t0)return;
+      raf=requestAnimationFrame(frame);
+      const dt=Math.min(.05,(now-last)/1000);last=now;
+      const u=Math.min(1,(now-t0)/1000/dur),p=P0+(P1-P0)*(u*(.72+.28*u));
+      if(now-lastSim>32){
+        lastSim=now;
+        const off=(((now/90)|0)*7919)%N,q=Math.min(1,3/Math.max(1,front)),cand=[];let cnt=0;
+        for(let i=0,j=0;i<N;i++,j+=4){
+          const dd=T[i]-p;let r=0,g=0,b=0,a=0,gA=0;
+          if(dd<.14){
+            if(dd>0){
+              const kk=(1-dd/.14)*(1-dd/.14);a=kk*.8*(.6+.8*R[i]);r=48;g=27;b=8;
+              if(dd<.025){const h=1-dd/.025;r+=h*170;g+=h*70;a=Math.max(a,h*.85);gA=h*.5}
+            }else{
+              const e=-dd,c=R[i],m2=M[i],ash=m2>.55?(m2-.55)/.45:0;r=16+c*18+ash*38;g=13+c*14+ash*35;b=12+c*12+ash*32;a=.97;
+              if(e<.03){
+                const h=1-e/.03,hv=Math.pow(h,1.6)*(.7+.6*R[(i+off)%N]);
+                r=Math.min(255,r+hv*380);g=Math.min(255,g+Math.max(0,hv-.35)*354);b=Math.min(255,b+Math.max(0,hv-.75)*600);a=1;gA=Math.min(1,hv)*.8;
+                if(e<.006){cnt++;if(Math.random()<q&&cand.length<12)cand.push(i)}
+              }else if(e<.09){
+                const m=1-e/.09,pt=R[(i+off)%N];
+                if(pt>.6){const c2=(pt-.6)/.4*m*m;r+=c2*210;g+=c2*60;a=1;gA=c2*.35}
+              }
+            }
+          }
+          px[j]=r;px[j+1]=g;px[j+2]=b;px[j+3]=a*255;gd[j]=255;gd[j+1]=140;gd[j+2]=40;gd[j+3]=gA*255;
+        }
+        front=cnt;
+        ictx.putImageData(img,0,0);gctx.putImageData(gimg,0,0);
+        sctx.clearRect(0,0,sc.width,sc.height);sctx.drawImage(gc,0,0,sc.width,sc.height);
+        bctx.setTransform(1,0,0,1,0,0);bctx.clearRect(0,0,bc.width,bc.height);bctx.setTransform(K,0,0,K,PAD*K,PAD*K);
+        bctx.save();bctx.beginPath();if(bctx.roundRect)bctx.roundRect(0,0,W,H,6);else bctx.rect(0,0,W,H);bctx.clip();
+        bctx.imageSmoothingEnabled=true;bctx.drawImage(ic,0,0,W,H);
+        bctx.globalCompositeOperation='lighter';bctx.globalAlpha=.55;bctx.drawImage(sc,0,0,W,H);bctx.restore();
+        if(parts.length<450)cand.forEach(i=>{
+          const x=(i%SW)/S,y=((i/SW)|0)/S;
+          parts.push({k:0,x,y,vx:rnd(-8,8),vy:-rnd(35,80),l:rnd(.5,.95),a:0,s:rnd(.3,.75),ph:Math.random()*6.3});
+          if(Math.random()<.35)parts.push({k:1,x,y,vx:rnd(-30,30),vy:-rnd(30,120),l:rnd(1,2.2),a:0,s:rnd(.6,1.2),ph:0});
+          if(Math.random()<.18)parts.push({k:2,x,y,vx:rnd(-6,6),vy:-rnd(14,32),l:rnd(2,3.6),a:0,s:rnd(.5,1),ph:0});
+        });
+      }
+      ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cnv.width,cnv.height);ctx.drawImage(bc,0,0);
+      ctx.setTransform(K,0,0,K,PAD*K,PAD*K);
+      for(let i=parts.length-1;i>=0;i--){
+        const q=parts[i];q.a+=dt;if(q.a>=q.l){parts.splice(i,1);continue}
+        const f=q.a/q.l;q.x+=(q.vx+(q.k===0?Math.sin(q.a*9+q.ph)*10:0))*dt;q.y+=q.vy*dt;
+        if(q.k===0){const sz=q.s*(1-f*.55);ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,f*6)*(1-f)*.55;ctx.drawImage(flame,q.x-20*sz,q.y-72*sz,40*sz,110*sz)}
+        else if(q.k===1){const sz=8*q.s*(1-f*.5);ctx.globalCompositeOperation='lighter';ctx.globalAlpha=(1-f)*(.65+.35*Math.sin(q.a*40));ctx.drawImage(spark,q.x-sz,q.y-sz,2*sz,2*sz)}
+        else{const sz=(14+f*46)*q.s;ctx.globalCompositeOperation='source-over';ctx.globalAlpha=Math.min(1,f*5)*(1-f)*.22;ctx.drawImage(smoke,q.x-sz/2,q.y-sz/2,sz,sz)}
+      }
+      ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+      if(u>=1&&!parts.length){cancelAnimationFrame(raf);raf=0}
+    };
+    raf=requestAnimationFrame(frame);
+  };
+  w.addEventListener('fxstart',start);
+  w.addEventListener('fxstop',stop);
 }
 function zoomable(w){
   let t,on=0;
-  const off=()=>{clearTimeout(t);on=0;w.classList.remove('zoom')};
+  const off=()=>{clearTimeout(t);if(on)w.dispatchEvent(new Event('fxstop'));on=0;w.classList.remove('zoom')};
   w.onpointermove=e=>{
     if(e.pointerType!=='mouse'||on)return;
-    clearTimeout(t);t=setTimeout(()=>{on=1;w.classList.add('zoom')},500);
+    clearTimeout(t);t=setTimeout(()=>{on=1;w.classList.add('zoom');w.dispatchEvent(new Event('fxstart'))},500);
   };
   w.onpointerleave=off;
 }
@@ -279,14 +381,16 @@ function adminHome(){
   const s=E('section','box','<h3>La saga</h3>');
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea'),[ap,iap]=F('À propos / crédits (un paragraphe = une ligne vide)',meta.apropos??APROPOS,'textarea');iap.rows=9;
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fxDur:+idl.value||0,fxTurns:+itl.value||0,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
   const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
-  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Embrasement : flammes et flammèches']].forEach(([v,l])=>fxs.add(new Option(l,v)));
+  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
   fxs.value=meta.fx||'';fxl.append(fxs);
-  s.append(a,b,c,d,ap,cw,fw,fxl,sv);
+  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 12 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
+  idl.type=itl.type='number';idl.step=itl.step='0.1';idl.min=itl.min='0.5';
+  s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
