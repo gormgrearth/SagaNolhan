@@ -490,3 +490,84 @@ function adminHome(){
   tl.append(nb);ov.append(top,s,im,tl);
 }
 async function importJSON(txt){
+  let a;try{a=JSON.parse(txt)}catch{return toast('Texte JSON invalide.')}
+  const arr=Array.isArray(a)?a:a.tomes;if(!Array.isArray(arr))return toast('Format non reconnu.');
+  for(const [i,t] of arr.entries()){
+    toast(`Import du tome ${i+1}/${arr.length}…`);
+    const o={n:t.tome,titre:t.titre||''};
+    if(t.img)o.cover=await upload(t.img);
+    if(!tomes.some(x=>x.id===t.id))o.status='draft';
+    await setDoc(doc(db,'tomes',t.id),o,{merge:true});
+  }
+  const f=arr[0]||{};
+  await setDoc(doc(db,'meta','saga'),{serie:f.serie||'',auteur:f.auteur||'',edition:f.edition||'',...(a.saga&&a.saga.intro?{intro:a.saga.intro}:{})},{merge:true});
+  await load();adminHome();toast('Import terminé ✔');
+}
+async function delTome(t){
+  if(!confirm('Supprimer « '+t.titre+' » et tout son texte ?'))return;
+  for(const d of (await getDocs(collection(db,'tomes',t.id,'blocks'))).docs)await deleteDoc(d.ref);
+  await deleteDoc(doc(db,'tomes',t.id));await load();adminHome();
+}
+async function editTome(t){
+  let bl=t.isNew?[]:(await getDocs(collection(db,'tomes',t.id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
+  const orig=bl.map(b=>b.id);
+  const draw=()=>{
+    const y=ov.scrollTop;ov.innerHTML='';
+    const top=E('div','abar',`<h2 class="gold">Tome ${esc(t.n)}</h2>`),back=E('button','btn','← Retour'),sv=E('button','btn main','Enregistrer le tome');
+    back.onclick=async()=>{await load();adminHome()};
+    sv.onclick=async()=>{
+      toast('Enregistrement…');
+      const ops=[[doc(db,'tomes',t.id),{n:t.n||0,titre:t.titre||'',status:t.status||'draft',cover:t.cover||'',coverPng:t.coverPng||''},1]];
+      bl.forEach((b,i)=>ops.push([doc(db,'tomes',t.id,'blocks',b.id),{o:i,t:b.t,text:b.text||'',img:b.img||'',cap:b.cap||''},1]));
+      orig.filter(id=>!bl.some(b=>b.id===id)).forEach(id=>ops.push([doc(db,'tomes',t.id,'blocks',id),0,0]));
+      try{for(let i=0;i<ops.length;i+=400){const w=writeBatch(db);ops.slice(i,i+400).forEach(([r,d,s])=>s?w.set(r,d,{merge:true}):w.delete(r));await w.commit()}}
+      catch(e){return toast('Échec de l’enregistrement : '+e.code)}
+      orig.length=0;bl.forEach(b=>orig.push(b.id));delete t.isNew;await load();toast('Tome enregistré ✔');
+    };
+    top.append(back,sv);
+    const m=E('section','box','<h3>Informations</h3>');
+    const [a,ia]=F('Titre',t.titre),[b,ib]=F('N° de tome',t.n),sl=E('select');
+    ib.type='number';ia.oninput=()=>t.titre=ia.value;ib.oninput=()=>t.n=+ib.value;
+    [['draft','Brouillon (invisible des lecteurs)'],['wip','En cours d’écriture (visible)'],['done','Terminé (visible)']].forEach(([v,l])=>sl.add(new Option(l,v)));
+    sl.value=t.status||'draft';sl.onchange=()=>t.status=sl.value;
+    m.append(a,b,sl,imgPick('Couverture finale (PNG exporté depuis l’atelier)',t,'coverPng'),imgPick('Illustration de couverture (si pas de PNG)',t,'cover'));
+    const ti=E('section','box','<h3>Importer le texte du tome</h3><p class="mut">Fichier .txt ou .md, ou texte collé. Un titre de chapitre = une ligne commençant par # ou « Chapitre ». Une page illustrée = une ligne [[illustration : légende]] à l’endroit voulu.</p>');
+    const ta=E('textarea'),fi=E('input'),mo=E('select'),bt=E('button','btn main','Importer le texte');
+    ta.rows=5;fi.type='file';fi.accept='.txt,.md';fi.onchange=async()=>{ta.value=await fi.files[0].text()};
+    mo.add(new Option('Remplacer le contenu actuel','r'));mo.add(new Option('Ajouter à la fin','a'));
+    bt.onclick=()=>{const nb=parse(ta.value);bl=mo.value==='r'?nb:bl.concat(nb);draw();toast(nb.length+' blocs créés')};
+    ti.append(ta,fi,mo,bt);
+    const bx=E('section','box','<h3>Contenu (chapitres, textes, pages illustrées)</h3>');
+    const ins=i=>{const r=E('div','ins');[['ch','＋ Chapitre'],['tx','＋ Texte'],['im','＋ Page illustrée']].forEach(([ty,l])=>{const x=E('button','mini',l);x.onclick=()=>{bl.splice(i,0,mk(ty,{}));draw()};r.append(x)});return r};
+    bl.forEach((b,i)=>{
+      bx.append(ins(i));
+      const c=E('div','blk'),hd=E('div','bh',({ch:'Chapitre',tx:'Texte',im:'Page illustrée'})[b.t]+' · n°'+(i+1)),up=E('button','mini','↑'),dn=E('button','mini','↓'),x=E('button','mini','✕');
+      up.onclick=()=>{if(i){[bl[i-1],bl[i]]=[bl[i],bl[i-1]];draw()}};
+      dn.onclick=()=>{if(i<bl.length-1){[bl[i+1],bl[i]]=[bl[i],bl[i+1]];draw()}};
+      x.onclick=()=>{bl.splice(i,1);draw()};hd.append(up,dn,x);c.append(hd);
+      if(b.t==='im'){c.append(imgPick('Image de la page illustrée',b,'img'));const [w,ci]=F('Légende',b.cap);ci.oninput=()=>b.cap=ci.value;c.append(w)}
+      else{const e=E(b.t==='ch'?'input':'textarea');e.value=b.text;if(b.t==='tx')e.rows=8;e.oninput=()=>b.text=e.value;c.append(e)}
+      bx.append(c);
+    });
+    bx.append(ins(bl.length));
+    ov.append(top,m,ti,bx);ov.scrollTop=y;
+  };
+  draw();
+}
+
+/* ---------- connexion discrète ---------- */
+$('#gear').onclick=()=>{if(admin)adminHome();else{openAfter=true;$('#lm').textContent='';$('#lg').showModal()}};
+$('#go').onclick=async e=>{
+  e.preventDefault();
+  try{await signInWithEmailAndPassword(auth,$('#em').value,$('#pw').value);$('#pw').value='';$('#lg').close()}
+  catch{$('#lm').textContent='E-mail ou mot de passe incorrect.'}
+};
+onAuthStateChanged(auth,async u=>{
+  admin=!!u;await load();
+  if(!admin)ov.hidden=true;
+  route();
+  if(admin&&openAfter){openAfter=false;adminHome()}
+});
+</script>
+</body>
+</html>
