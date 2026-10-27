@@ -23,7 +23,7 @@ a{color:inherit;text-decoration:none}
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
 /* Éclat : contour complet, animation de luminosité compatible Firefox/Edge */
 .fx-sweep{inset:-5px;border:2px solid rgba(255,239,170,.95);border-radius:10px;box-shadow:0 0 3px 1px rgba(255,255,235,.95),0 0 9px 3px rgba(255,203,82,.85),0 0 20px 6px rgba(255,137,24,.42);opacity:.25}
-.cvw.zoom .fx-sweep{animation:edgePulse var(--dur,3.4s) ease-in-out 1 both}
+.cvw.zoom .fx-sweep{animation:edgePulse var(--dur,3.4s) ease-in-out var(--n,1) both}
 @keyframes edgePulse{0%{opacity:.15;filter:brightness(.8)}18%{opacity:.9;filter:brightness(1.15)}48%{opacity:1;filter:brightness(1.45)}78%{opacity:.8;filter:brightness(1.1)}100%{opacity:.25;filter:brightness(.9)}}
 /* Aura : halo stable autour de la carte, seule son intensité respire doucement */
 .fx-aura{inset:-30px;border-radius:18px;box-shadow:0 0 18px 4px rgba(255,231,145,.24),0 0 38px 12px rgba(255,190,65,.22),0 0 68px 22px rgba(255,135,25,.12);animation:auraBreath 5.5s ease-in-out infinite alternate}
@@ -32,6 +32,9 @@ a{color:inherit;text-decoration:none}
 .cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 18px 2px rgba(255,238,170,.35),0 0 42px 10px rgba(255,190,65,.23),0 0 76px 18px rgba(255,145,25,.11),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
+/* pendant la combustion, le canvas redessine la carte : on masque l'originale pour que les zones consumées soient vraiment vides */
+.cvw.zoom[data-fx=fire].burn .cz,.cvw.zoom[data-fx=fire].burn .cvt{visibility:hidden}
+.cvw.zoom[data-fx=fire].burn .cv{background:none;border-color:transparent;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
@@ -52,7 +55,7 @@ footer{text-align:center;color:var(--mut);padding:20px}
 article{max-width:680px;margin:0 auto;padding:20px 18px 90px;font-size:var(--fs);line-height:1.65}
 .tt{text-align:center;margin:44px 0 60px}.tt small{display:block;text-transform:uppercase;letter-spacing:.35em;font-size:.75em;color:var(--g2);margin-bottom:14px}.tt h1{font-size:2.8em;margin:0;line-height:1.2;text-transform:uppercase;letter-spacing:.06em}.tt .ill{display:block;margin:0 auto -64px;max-width:100%;max-height:70vh;-webkit-mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent),linear-gradient(to bottom,transparent,#000 14%,#000 55%,transparent);mask-composite:intersect}.tt small,.tt h1{position:relative}.tt::after{content:"♛";display:block;color:var(--g2);font-size:1.3rem;margin-top:18px}
 article p{margin:0 0 .9em;text-align:justify;hyphens:auto}
-article h2{font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);text-align:center;margin:2.4em 0 1em;letter-spacing:.02em}article h2::before{content:"";display:block;width:48px;height:1px;background:var(--g2);margin:0 auto .7em}
+article h2{scroll-margin-top:64px;font-size:1.35em;font-weight:500;font-style:italic;color:var(--ink);text-align:center;margin:2.4em 0 1em;letter-spacing:.02em}article h2::before{content:"";display:block;width:48px;height:1px;background:var(--g2);margin:0 auto .7em}
 .pg{margin:2em -18px;text-align:center}.pg img{max-width:100%;max-height:92vh}.pg figcaption{font-style:italic;color:var(--mut)}
 .end,.c{text-align:center}.mut{color:var(--mut)}
 #gear{position:fixed;right:6px;bottom:6px;opacity:.12;background:none;border:0;color:var(--ink);font-size:14px;cursor:pointer;z-index:10}#gear:hover{opacity:.7}
@@ -157,7 +160,7 @@ function buildFx(w,fx){
   if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   w.dataset.fx=fx;
   const d=E('div','fx fx-'+fx);
-  if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--turn',((+meta.fxTurns||1.15)*360)+'deg')}
+  if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--n',Math.max(1,Math.round(+meta.fxTurns||1)))}
   w.append(d);
   if(fx==='aura')auraFx(w,d);
   if(fx==='fire')fireFx(w,d,+meta.fxDur||30);
@@ -170,7 +173,9 @@ function auraFx(w,d){
 /* Combustion : la carte se consume lentement depuis un coin du bas (bord incandescent, roussi, charbon, flammes, étincelles, fumée) */
 function fireFx(w,d,dur){
   const PAD=50,S=1.25,cv=w.querySelector('.cv'),cnv=E('canvas'),ctx=cnv.getContext('2d');d.append(cnv);
-  const coverImg=new Image();coverImg.crossOrigin='anonymous';const bgEl=cv.querySelector('.cz');const bg=(bgEl&&getComputedStyle(bgEl).backgroundImage.match(/^url\([\"']?(.*?)[\"']?\)$/)||[])[1];if(bg)coverImg.src=bg;
+  const coverImg=new Image();coverImg.crossOrigin='anonymous';const bgEl=cv.querySelector('.cz');let coverBad=false;coverImg.onerror=()=>{coverBad=true};
+  /* l'image de fond est posée de façon asynchrone (setBg) : on la lit au moment du zoom, pas à la création de la carte */
+  const syncCover=()=>{const u=(bgEl&&getComputedStyle(bgEl).backgroundImage.match(/^url\(["']?(.*?)["']?\)$/)||[])[1];if(u&&coverImg.dataset.src!==u){coverBad=false;coverImg.dataset.src=u;coverImg.src=u}return !!u};
   const imul=Math.imul;
   const hash=(x,y,s)=>{let h=imul(x,374761393)+imul(y,668265263)+imul(s,1442695041)|0;h=imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
   const vn=(x,y,s)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),e=hash(xi+1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+e)*u*v};
@@ -181,10 +186,11 @@ function fireFx(w,d,dur){
   const spark=mk(16,16,g=>{const r=g.createRadialGradient(8,8,0,8,8,8);r.addColorStop(0,'rgba(255,240,180,1)');r.addColorStop(.4,'rgba(255,150,40,.8)');r.addColorStop(1,'rgba(255,80,0,0)');g.fillStyle=r;g.fillRect(0,0,16,16)});
   const smoke=mk(64,64,g=>{const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(95,86,80,.55)');r.addColorStop(1,'rgba(95,86,80,0)');g.fillStyle=r;g.fillRect(0,0,64,64)});
   let raf=0,run=null;
-  const stop=()=>{if(raf)cancelAnimationFrame(raf);raf=0;run=null;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cnv.width,cnv.height)};
+  const stop=()=>{if(raf)cancelAnimationFrame(raf);raf=0;run=null;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cnv.width,cnv.height);w.classList.remove('burn')};
   const start=()=>{
     stop();
     const W=cv.offsetWidth,H=cv.offsetHeight;if(!W||!H)return;
+    const hasCover=syncCover();
     const SW=Math.round(W*S),SH=Math.round(H*S),N=SW*SH,K=Math.min(3,(devicePixelRatio||1)*1.6);
     cnv.width=Math.round((W+2*PAD)*K);cnv.height=Math.round((H+2*PAD)*K);
     const seed=(Math.random()*9999)|0,ox=Math.random()<.5?SW:0,oy=SH,md=Math.hypot(SW,SH);
@@ -203,8 +209,9 @@ function fireFx(w,d,dur){
     const frame=now=>{
       if(run!==t0)return;
       raf=requestAnimationFrame(frame);
-      const dt=Math.min(.05,(now-last)/1000);last=now;
-      const u=Math.min(1,(now-t0)/1000/dur),p=P0+(P1-P0)*(u*(.72+.28*u));
+      if(hasCover&&!coverBad&&!(coverImg.complete&&coverImg.naturalWidth))return;/* attend le décodage de la couverture */
+      const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;
+      const u=Math.max(0,Math.min(1,(now-t0)/1000/dur)),p=P0+(P1-P0)*(u*(.72+.28*u));
       if(now-lastSim>32){
         lastSim=now;
         const off=(((now/90)|0)*7919)%N,q=Math.min(1,3/Math.max(1,front)),cand=[];let cnt=0;
@@ -247,6 +254,7 @@ function fireFx(w,d,dur){
         });
       }
       ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cnv.width,cnv.height);ctx.drawImage(bc,0,0);
+      w.classList.add('burn');
       ctx.setTransform(K,0,0,K,PAD*K,PAD*K);
       for(let i=parts.length-1;i>=0;i--){
         const q=parts[i];q.a+=dt;if(q.a>=q.l){parts.splice(i,1);continue}
@@ -272,13 +280,15 @@ function zoomable(w){
   };
   w.onpointerleave=off;
 }
-let tm;
+let tm,curRead='';
 async function read(id){
   const t=tomes.find(x=>x.id===id);if(!t){location.hash='#/';return}
   app.innerHTML='<p class="c mut" style="padding:60px">Chargement…</p>';
   const bl=(await getDocs(collection(db,'tomes',id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
+  if(curRead!==id)return;/* l'utilisateur a changé de page pendant le chargement */
   document.title=t.titre;
   const cov=t.cover||t.coverPng,csrc=cov?await img(cov):'';
+  if(curRead!==id)return;
   app.innerHTML=`<div class="bar"><a href="#/">← Saga</a><select id="toc"><option value="">Chapitres</option></select><span><button id="am">A−</button> <button id="ap">A+</button> <button id="th">◐</button></span></div><article id="art"><div class="tt">${csrc?'<img class="ill" alt="">':''}<small>Tome ${esc(t.n)}</small><h1 class="gold">${esc(t.titre)}</h1></div></article>`;
   const art=$('#art'),toc=$('#toc'),il=$('.ill');let n=0;
   if(il)il.src=csrc;
@@ -339,7 +349,7 @@ $('#mu').onclick=()=>{
 ['click','keydown','touchend'].forEach(ev=>document.addEventListener(ev,e=>{
   if(onHome&&musicOn&&ytReady&&!(e.target.closest&&e.target.closest('#mc'))&&yt.getPlayerState()!==1)yt.playVideo();
 },true));
-function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);onHome=!m;if(onHome&&!yt)ytInit();musicSync();m?read(m[1]):home()}
+function route(){window.onscroll=null;$('#fond').classList.remove('on');const m=location.hash.match(/^#\/t\/(.+)/);scrollTo(0,0);onHome=!m;curRead=m?m[1]:'';if(onHome&&!yt)ytInit();musicSync();m?read(m[1]):home()}
 window.onhashchange=route;
 
 /* ---------- administration ---------- */
@@ -378,9 +388,9 @@ function adminHome(){
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
   const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
-  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
+  [['','Aucun'],['sweep','Éclat : pulsation lumineuse autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
   fxs.value=meta.fx||'';fxl.append(fxs);
-  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 30 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
+  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée d’une pulsation ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 30 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de pulsations (1 par défaut)',meta.fxTurns||'');
   idl.type=itl.type='number';idl.step=itl.step='0.1';idl.min=itl.min='0.5';
   s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
@@ -398,7 +408,8 @@ async function importJSON(txt){
   const arr=Array.isArray(a)?a:a.tomes;if(!Array.isArray(arr))return toast('Format non reconnu.');
   for(const [i,t] of arr.entries()){
     toast(`Import du tome ${i+1}/${arr.length}…`);
-    const o={n:t.tome,titre:t.titre||''};
+    if(!t.id){toast(`Tome ${i+1} ignoré : identifiant manquant.`);continue}
+    const o={titre:t.titre||''};if(t.tome!=null)o.n=t.tome;
     if(t.img)o.cover=await upload(t.img);
     if(!tomes.some(x=>x.id===t.id))o.status='draft';
     await setDoc(doc(db,'tomes',t.id),o,{merge:true});
@@ -464,14 +475,3 @@ $('#gear').onclick=()=>{if(admin)adminHome();else{openAfter=true;$('#lm').textCo
 $('#go').onclick=async e=>{
   e.preventDefault();
   try{await signInWithEmailAndPassword(auth,$('#em').value,$('#pw').value);$('#pw').value='';$('#lg').close()}
-  catch{$('#lm').textContent='E-mail ou mot de passe incorrect.'}
-};
-onAuthStateChanged(auth,async u=>{
-  admin=!!u;await load();
-  if(!admin)ov.hidden=true;
-  route();
-  if(admin&&openAfter){openAfter=false;adminHome()}
-});
-</script>
-</body>
-</html>
