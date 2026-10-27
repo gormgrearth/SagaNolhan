@@ -20,12 +20,14 @@ a{color:inherit;text-decoration:none}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
 .cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
 /* clic droit maintenu : la carte pivote légèrement vers le pointeur */
-.cvw.tilting{z-index:10;cursor:grabbing;transition:transform .08s linear}
+.cvw.zoom{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg stroke='%23000' stroke-width='3.6' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23000' stroke='%23000' stroke-width='2.6' stroke-linejoin='round'/%3E%3Cg stroke='%23ffd36b' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round' fill='none'%3E%3Crect x='3' y='7' width='11' height='19' rx='5.5'/%3E%3Cpath d='M8.5 7V14M3 14H14'/%3E%3Cpath d='M23 5.5A5.5 5.5 0 1 1 17.5 11'/%3E%3C/g%3E%3Cpath d='M8.5 7C11.8 7 14 9.5 14 12.5V14H8.5Z' fill='%23ffd36b'/%3E%3Cpath d='M17.5 7.6L14.6 12L20.4 12Z' fill='%23ffd36b'/%3E%3C/svg%3E") 16 16,grab}
+.cvw.tilting{z-index:10}.cvw.zoom.tilting,.cvw.tilting{cursor:grabbing}
+.cvw.tilting,.cvw.waving{transition:transform .08s linear}
 /* profondeur : l'illustration (.cz) est « reculée » derrière le cadre. Une ombre intérieure (.dp) le suggère au repos ;
    à l'inclinaison, l'illustration glisse légèrement par rapport au cadre (parallaxe, --px/--py en % de la carte).
    Le léger agrandissement (1.04) évite de découvrir le fond sur les bords. */
 .cz{transform:translate(calc(var(--px,0)*1%),calc(var(--py,0)*1%)) scale(1.04);transition:transform .35s ease}
-.cvw.tilting .cz{transition:transform .08s linear}
+.cvw.tilting .cz,.cvw.waving .cz{transition:transform .08s linear}
 .dp{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 10px 2px rgba(0,0,0,.55),inset 0 3px 6px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,255,255,.1)}
 /* brillance linéaire : une bande de lumière dont la position (--gp) et l'intensité (--ti) dépendent de l'inclinaison.
    Dans .cv, donc SOUS le canvas de la combustion : la partie brûlée n'est pas brillante. */
@@ -168,6 +170,7 @@ function home(){
     c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sg"></i><i class="dp"></i></div></div><div class="st">${badge(t)}</div>`;
     const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);buildFx(w,meta.fx);zoomable(w);tiltable(w);g.append(c);
   });
+  planWave(g);
 }
 /* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
 function buildFx(w,fx){
@@ -301,16 +304,18 @@ function zoomable(w){
   w.onpointerleave=off;
 }
 /* clic droit maintenu sur une couverture : elle pivote légèrement vers le pointeur (le menu contextuel est désactivé sur les couvertures) */
+const TMAX=9,TDEP=1.8;
+/* pose d'une carte : nx,ny dans -1..1 (nx>0 : côté droit enfoncé, ny>0 : côté haut enfoncé) → inclinaison, parallaxe de l'illustration, reflet */
+function pose(w,nx,ny){
+  const S=(k,v)=>w.style.setProperty(k,v);
+  S('--ry',(nx*TMAX).toFixed(1)+'deg');S('--rx',(ny*TMAX).toFixed(1)+'deg');
+  S('--px',(-nx*TDEP).toFixed(2));S('--py',(ny*TDEP).toFixed(2));/* l'illustration recule : elle glisse à l'opposé du côté enfoncé */
+  S('--gp',(50-nx*60+ny*20).toFixed(1));S('--ti',Math.min(1,Math.hypot(nx,ny)).toFixed(2));/* reflet linéaire ∝ inclinaison */
+}
 function tiltable(w){
-  const MAX=9,DEP=1.8;let id=null,r;
-  const aim=e=>{
-    const x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)),S=(k,v)=>w.style.setProperty(k,v);
-    const nx=(x-.5)*2,ny=(.5-y)*2;/* -1..1 ; nx>0 : pointeur à droite, ny>0 : pointeur en haut */
-    S('--ry',(nx*MAX).toFixed(1)+'deg');S('--rx',(ny*MAX).toFixed(1)+'deg');
-    S('--px',(-nx*DEP).toFixed(2));S('--py',(ny*DEP).toFixed(2));/* l'illustration recule : elle glisse à l'opposé du côté enfoncé */
-    S('--gp',(50-nx*60+ny*20).toFixed(1));S('--ti',Math.min(1,Math.hypot(nx,ny)).toFixed(2));/* reflet linéaire ∝ inclinaison */
-  };
-  const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');['--rx','--ry'].forEach(k=>w.style.setProperty(k,'0deg'));['--px','--py','--ti'].forEach(k=>w.style.setProperty(k,'0'))};
+  let id=null,r;
+  const aim=e=>pose(w,(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))-.5)*2,(.5-Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)))*2);
+  const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');pose(w,0,0)};
   w.addEventListener('pointerdown',e=>{
     if(e.pointerType!=='mouse'||e.button!==2)return;
     id=e.pointerId;r=w.getBoundingClientRect();try{w.setPointerCapture(id)}catch{}
@@ -319,6 +324,37 @@ function tiltable(w){
   w.addEventListener('pointermove',e=>{if(e.pointerId===id)aim(e)});
   w.addEventListener('pointerup',end);w.addEventListener('pointercancel',end);
   w.addEventListener('contextmenu',e=>e.preventDefault());
+}
+/* vague de démonstration : une seule fois, N secondes après l'affichage de l'accueil, les cartes s'inclinent tour à tour
+   (de haut-gauche à bas-droite) comme si une vague invisible les traversait, pour révéler profondeur et brillance */
+let waveT;
+function planWave(g){
+  clearTimeout(waveT);
+  const d=meta.waveDelay==null?30:+meta.waveDelay;
+  if(!(d>0)||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  waveT=setTimeout(()=>{
+    if(!g.isConnected)return;
+    const rs=[...g.querySelectorAll('.cvw')].map(w=>{const b=w.getBoundingClientRect();return{w,x:b.left+b.width/2,y:b.top+b.height/2}});
+    if(!rs.length)return;
+    const rg=k=>{const v=rs.map(o=>o[k]),mn=Math.min(...v);return[mn,(Math.max(...v)-mn)||1]},[x0,xs]=rg('x'),[y0,ys]=rg('y');
+    const TR=1.6,L=1.8,A=.85,t0=performance.now();
+    rs.forEach(o=>{o.p=.75*(o.x-x0)/xs+.25*(o.y-y0)/ys;o.w.classList.add('waving')});
+    const stop=o=>{o.done=1;o.w.classList.remove('waving');if(o.w.isConnected&&!o.w.classList.contains('tilting'))pose(o.w,0,0)};
+    const frame=now=>{
+      const t=(now-t0)/1000;let live=0;
+      rs.forEach(o=>{
+        if(o.done)return;
+        if(!o.w.isConnected||o.w.classList.contains('tilting'))return stop(o);
+        const u=(t-o.p*TR)/L;
+        if(u>=1)return stop(o);
+        live++;if(u<=0)return;
+        const e=Math.sin(Math.PI*u);
+        pose(o.w,A*e*Math.sin(2*Math.PI*u),A*.6*e*Math.cos(2*Math.PI*u));
+      });
+      if(live)requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  },d*1000);
 }
 let tm;
 async function read(id){
@@ -421,7 +457,7 @@ function adminHome(){
   const s=E('section','box','<h3>La saga</h3>');
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea'),[ap,iap]=F('À propos / crédits (un paragraphe = une ligne vide)',meta.apropos??APROPOS,'textarea');iap.rows=9;
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fxDur:['sweep','fire'].includes(fxs.value)?+idl.value:0,fxTurns:fxs.value==='sweep'?+itl.value:0,shine:+ish.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fxDur:['sweep','fire'].includes(fxs.value)?+idl.value:0,fxTurns:fxs.value==='sweep'?+itl.value:0,shine:+ish.value,waveDelay:+iwv.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
@@ -430,7 +466,7 @@ function adminHome(){
   fxs.value=meta.fx||'';fxl.append(fxs);
   const G=(txt,mn,mx,st,v,fmt)=>{const w=E('label'),t=E('span'),i=E('input'),tx=typeof txt==='function'?txt:()=>txt;i.type='range';i.min=mn;i.max=mx;i.step=st;i.value=v;const up=()=>{t.textContent=tx()+' : '+fmt(+i.value)};i.oninput=up;up();w.append(t,i);return[w,i]};
   let dtxt='Durée de l’effet';
-  const [dl,idl]=G(()=>dtxt,1,10,.1,3.4,v=>v.toLocaleString('fr-FR')+' s'),[trl,itl]=G('Nombre de tours de lumière',.5,3,.05,meta.fxTurns||1.15,v=>v.toLocaleString('fr-FR')),[shl,ish]=G('Brillance à l’inclinaison des couvertures (0 = aucune)',0,100,5,meta.shine==null?60:meta.shine,v=>v+' %');
+  const [dl,idl]=G(()=>dtxt,1,10,.1,3.4,v=>v.toLocaleString('fr-FR')+' s'),[trl,itl]=G('Nombre de tours de lumière',.5,3,.05,meta.fxTurns||1.15,v=>v.toLocaleString('fr-FR')),[shl,ish]=G('Brillance à l’inclinaison des couvertures (0 = aucune)',0,100,5,meta.shine==null?60:meta.shine,v=>v+' %'),[wvl,iwv]=G('Vague de démonstration sur l’accueil, une seule fois après',0,120,5,meta.waveDelay==null?30:meta.waveDelay,v=>v?v+' s':'désactivée');
   /* les jauges d'un effet n'apparaissent que si l'effet choisi les utilise */
   const sync=()=>{
     const f=fxs.value,sw=f==='sweep',fi=f==='fire';
@@ -442,7 +478,7 @@ function adminHome(){
     }
   };
   fxs.onchange=sync;sync();
-  s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,shl,sv);
+  s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,shl,wvl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
@@ -454,84 +490,3 @@ function adminHome(){
   tl.append(nb);ov.append(top,s,im,tl);
 }
 async function importJSON(txt){
-  let a;try{a=JSON.parse(txt)}catch{return toast('Texte JSON invalide.')}
-  const arr=Array.isArray(a)?a:a.tomes;if(!Array.isArray(arr))return toast('Format non reconnu.');
-  for(const [i,t] of arr.entries()){
-    toast(`Import du tome ${i+1}/${arr.length}…`);
-    const o={n:t.tome,titre:t.titre||''};
-    if(t.img)o.cover=await upload(t.img);
-    if(!tomes.some(x=>x.id===t.id))o.status='draft';
-    await setDoc(doc(db,'tomes',t.id),o,{merge:true});
-  }
-  const f=arr[0]||{};
-  await setDoc(doc(db,'meta','saga'),{serie:f.serie||'',auteur:f.auteur||'',edition:f.edition||'',...(a.saga&&a.saga.intro?{intro:a.saga.intro}:{})},{merge:true});
-  await load();adminHome();toast('Import terminé ✔');
-}
-async function delTome(t){
-  if(!confirm('Supprimer « '+t.titre+' » et tout son texte ?'))return;
-  for(const d of (await getDocs(collection(db,'tomes',t.id,'blocks'))).docs)await deleteDoc(d.ref);
-  await deleteDoc(doc(db,'tomes',t.id));await load();adminHome();
-}
-async function editTome(t){
-  let bl=t.isNew?[]:(await getDocs(collection(db,'tomes',t.id,'blocks'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.o-b.o);
-  const orig=bl.map(b=>b.id);
-  const draw=()=>{
-    const y=ov.scrollTop;ov.innerHTML='';
-    const top=E('div','abar',`<h2 class="gold">Tome ${esc(t.n)}</h2>`),back=E('button','btn','← Retour'),sv=E('button','btn main','Enregistrer le tome');
-    back.onclick=async()=>{await load();adminHome()};
-    sv.onclick=async()=>{
-      toast('Enregistrement…');
-      const ops=[[doc(db,'tomes',t.id),{n:t.n||0,titre:t.titre||'',status:t.status||'draft',cover:t.cover||'',coverPng:t.coverPng||''},1]];
-      bl.forEach((b,i)=>ops.push([doc(db,'tomes',t.id,'blocks',b.id),{o:i,t:b.t,text:b.text||'',img:b.img||'',cap:b.cap||''},1]));
-      orig.filter(id=>!bl.some(b=>b.id===id)).forEach(id=>ops.push([doc(db,'tomes',t.id,'blocks',id),0,0]));
-      try{for(let i=0;i<ops.length;i+=400){const w=writeBatch(db);ops.slice(i,i+400).forEach(([r,d,s])=>s?w.set(r,d,{merge:true}):w.delete(r));await w.commit()}}
-      catch(e){return toast('Échec de l’enregistrement : '+e.code)}
-      orig.length=0;bl.forEach(b=>orig.push(b.id));delete t.isNew;await load();toast('Tome enregistré ✔');
-    };
-    top.append(back,sv);
-    const m=E('section','box','<h3>Informations</h3>');
-    const [a,ia]=F('Titre',t.titre),[b,ib]=F('N° de tome',t.n),sl=E('select');
-    ib.type='number';ia.oninput=()=>t.titre=ia.value;ib.oninput=()=>t.n=+ib.value;
-    [['draft','Brouillon (invisible des lecteurs)'],['wip','En cours d’écriture (visible)'],['done','Terminé (visible)']].forEach(([v,l])=>sl.add(new Option(l,v)));
-    sl.value=t.status||'draft';sl.onchange=()=>t.status=sl.value;
-    m.append(a,b,sl,imgPick('Couverture finale (PNG exporté depuis l’atelier)',t,'coverPng'),imgPick('Illustration de couverture (si pas de PNG)',t,'cover'));
-    const ti=E('section','box','<h3>Importer le texte du tome</h3><p class="mut">Fichier .txt ou .md, ou texte collé. Un titre de chapitre = une ligne commençant par # ou « Chapitre ». Une page illustrée = une ligne [[illustration : légende]] à l’endroit voulu.</p>');
-    const ta=E('textarea'),fi=E('input'),mo=E('select'),bt=E('button','btn main','Importer le texte');
-    ta.rows=5;fi.type='file';fi.accept='.txt,.md';fi.onchange=async()=>{ta.value=await fi.files[0].text()};
-    mo.add(new Option('Remplacer le contenu actuel','r'));mo.add(new Option('Ajouter à la fin','a'));
-    bt.onclick=()=>{const nb=parse(ta.value);bl=mo.value==='r'?nb:bl.concat(nb);draw();toast(nb.length+' blocs créés')};
-    ti.append(ta,fi,mo,bt);
-    const bx=E('section','box','<h3>Contenu (chapitres, textes, pages illustrées)</h3>');
-    const ins=i=>{const r=E('div','ins');[['ch','＋ Chapitre'],['tx','＋ Texte'],['im','＋ Page illustrée']].forEach(([ty,l])=>{const x=E('button','mini',l);x.onclick=()=>{bl.splice(i,0,mk(ty,{}));draw()};r.append(x)});return r};
-    bl.forEach((b,i)=>{
-      bx.append(ins(i));
-      const c=E('div','blk'),hd=E('div','bh',({ch:'Chapitre',tx:'Texte',im:'Page illustrée'})[b.t]+' · n°'+(i+1)),up=E('button','mini','↑'),dn=E('button','mini','↓'),x=E('button','mini','✕');
-      up.onclick=()=>{if(i){[bl[i-1],bl[i]]=[bl[i],bl[i-1]];draw()}};
-      dn.onclick=()=>{if(i<bl.length-1){[bl[i+1],bl[i]]=[bl[i],bl[i+1]];draw()}};
-      x.onclick=()=>{bl.splice(i,1);draw()};hd.append(up,dn,x);c.append(hd);
-      if(b.t==='im'){c.append(imgPick('Image de la page illustrée',b,'img'));const [w,ci]=F('Légende',b.cap);ci.oninput=()=>b.cap=ci.value;c.append(w)}
-      else{const e=E(b.t==='ch'?'input':'textarea');e.value=b.text;if(b.t==='tx')e.rows=8;e.oninput=()=>b.text=e.value;c.append(e)}
-      bx.append(c);
-    });
-    bx.append(ins(bl.length));
-    ov.append(top,m,ti,bx);ov.scrollTop=y;
-  };
-  draw();
-}
-
-/* ---------- connexion discrète ---------- */
-$('#gear').onclick=()=>{if(admin)adminHome();else{openAfter=true;$('#lm').textContent='';$('#lg').showModal()}};
-$('#go').onclick=async e=>{
-  e.preventDefault();
-  try{await signInWithEmailAndPassword(auth,$('#em').value,$('#pw').value);$('#pw').value='';$('#lg').close()}
-  catch{$('#lm').textContent='E-mail ou mot de passe incorrect.'}
-};
-onAuthStateChanged(auth,async u=>{
-  admin=!!u;await load();
-  if(!admin)ov.hidden=true;
-  route();
-  if(admin&&openAfter){openAfter=false;adminHome()}
-});
-</script>
-</body>
-</html>
