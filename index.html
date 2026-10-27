@@ -21,13 +21,16 @@ a{color:inherit;text-decoration:none}
 .cvw{--sc:1;--rx:0deg;--ry:0deg;position:relative;cursor:zoom-in;transform:perspective(800px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--sc));transition:transform .35s ease}.cvw.zoom{--sc:1.6;z-index:10}
 /* clic droit maintenu : la carte pivote légèrement vers le pointeur */
 .cvw.tilting{z-index:10;cursor:grabbing;transition:transform .08s linear}
-/* brillance permanente : reflet qui balaie la carte (.sh) + reflet ponctuel qui suit le pointeur pendant l'inclinaison (.sg).
-   Dans .cv, donc SOUS le canvas de la combustion : la partie brûlée (charbon opaque) n'est pas brillante. */
-.sh,.sg{position:absolute;inset:0;pointer-events:none;opacity:var(--shine,.6)}
-.sh{background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.14) 45%,rgba(255,246,214,.4) 50%,rgba(255,255,255,.14) 55%,transparent 62%) 140% 0/260% 100% no-repeat;animation:shine 7s ease-in-out infinite;animation-delay:var(--sd,0s)}
-@keyframes shine{0%{background-position:140% 0}45%,100%{background-position:-40% 0}}
-.sg{background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.45),rgba(255,236,190,.12) 35%,transparent 62%);opacity:0;transition:opacity .25s}
-.cvw.tilting .sg{opacity:var(--shine,.6)}.cvw.tilting .sh{animation-play-state:paused}
+/* profondeur : l'illustration (.cz) est « reculée » derrière le cadre. Une ombre intérieure (.dp) le suggère au repos ;
+   à l'inclinaison, l'illustration glisse légèrement par rapport au cadre (parallaxe, --px/--py en % de la carte).
+   Le léger agrandissement (1.04) évite de découvrir le fond sur les bords. */
+.cz{transform:translate(calc(var(--px,0)*1%),calc(var(--py,0)*1%)) scale(1.04);transition:transform .35s ease}
+.cvw.tilting .cz{transition:transform .08s linear}
+.dp{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 10px 2px rgba(0,0,0,.55),inset 0 3px 6px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,255,255,.1)}
+/* brillance linéaire : une bande de lumière dont la position (--gp) et l'intensité (--ti) dépendent de l'inclinaison.
+   Dans .cv, donc SOUS le canvas de la combustion : la partie brûlée n'est pas brillante. */
+.sg{position:absolute;inset:0;pointer-events:none;opacity:calc(var(--shine,.6)*var(--ti,0));transition:opacity .25s;
+ background:linear-gradient(115deg,transparent calc(var(--gp,50)*1% - 26%),rgba(255,255,255,.18) calc(var(--gp,50)*1% - 8%),rgba(255,248,224,.6) calc(var(--gp,50)*1%),rgba(255,255,255,.18) calc(var(--gp,50)*1% + 8%),transparent calc(var(--gp,50)*1% + 26%))}
 .cv{transition:box-shadow .35s ease}.cvw.zoom .cv{box-shadow:0 16px 40px #000c}
 /* effets au zoom d'une couverture (choisis en administration) */
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
@@ -46,7 +49,7 @@ a{color:inherit;text-decoration:none}
 .cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 14px 1px rgba(255,214,102,.3),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
-@media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}.sh{animation:none;opacity:0}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
+@media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
@@ -162,8 +165,8 @@ function home(){
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
   tomes.forEach(t=>{
     const c=E('a','card');c.href='#/t/'+t.id;
-    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sh"></i><i class="sg"></i></div></div><div class="st">${badge(t)}</div>`;
-    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);w.style.setProperty('--sd','-'+(Math.random()*7).toFixed(1)+'s');buildFx(w,meta.fx);zoomable(w);tiltable(w);g.append(c);
+    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}<i class="sg"></i><i class="dp"></i></div></div><div class="st">${badge(t)}</div>`;
+    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);w.style.setProperty('--shine',(meta.shine==null?60:+meta.shine)/100);buildFx(w,meta.fx);zoomable(w);tiltable(w);g.append(c);
   });
 }
 /* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
@@ -299,12 +302,15 @@ function zoomable(w){
 }
 /* clic droit maintenu sur une couverture : elle pivote légèrement vers le pointeur (le menu contextuel est désactivé sur les couvertures) */
 function tiltable(w){
-  const MAX=9;let id=null,r;
+  const MAX=9,DEP=1.8;let id=null,r;
   const aim=e=>{
     const x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)),S=(k,v)=>w.style.setProperty(k,v);
-    S('--ry',((x-.5)*2*MAX).toFixed(1)+'deg');S('--rx',((.5-y)*2*MAX).toFixed(1)+'deg');S('--mx',(x*100).toFixed(0)+'%');S('--my',(y*100).toFixed(0)+'%');
+    const nx=(x-.5)*2,ny=(.5-y)*2;/* -1..1 ; nx>0 : pointeur à droite, ny>0 : pointeur en haut */
+    S('--ry',(nx*MAX).toFixed(1)+'deg');S('--rx',(ny*MAX).toFixed(1)+'deg');
+    S('--px',(-nx*DEP).toFixed(2));S('--py',(ny*DEP).toFixed(2));/* l'illustration recule : elle glisse à l'opposé du côté enfoncé */
+    S('--gp',(50-nx*60+ny*20).toFixed(1));S('--ti',Math.min(1,Math.hypot(nx,ny)).toFixed(2));/* reflet linéaire ∝ inclinaison */
   };
-  const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');w.style.setProperty('--rx','0deg');w.style.setProperty('--ry','0deg')};
+  const end=e=>{if(e.pointerId!==id)return;id=null;w.classList.remove('tilting');['--rx','--ry'].forEach(k=>w.style.setProperty(k,'0deg'));['--px','--py','--ti'].forEach(k=>w.style.setProperty(k,'0'))};
   w.addEventListener('pointerdown',e=>{
     if(e.pointerType!=='mouse'||e.button!==2)return;
     id=e.pointerId;r=w.getBoundingClientRect();try{w.setPointerCapture(id)}catch{}
@@ -424,7 +430,7 @@ function adminHome(){
   fxs.value=meta.fx||'';fxl.append(fxs);
   const G=(txt,mn,mx,st,v,fmt)=>{const w=E('label'),t=E('span'),i=E('input'),tx=typeof txt==='function'?txt:()=>txt;i.type='range';i.min=mn;i.max=mx;i.step=st;i.value=v;const up=()=>{t.textContent=tx()+' : '+fmt(+i.value)};i.oninput=up;up();w.append(t,i);return[w,i]};
   let dtxt='Durée de l’effet';
-  const [dl,idl]=G(()=>dtxt,1,10,.1,3.4,v=>v.toLocaleString('fr-FR')+' s'),[trl,itl]=G('Nombre de tours de lumière',.5,3,.05,meta.fxTurns||1.15,v=>v.toLocaleString('fr-FR')),[shl,ish]=G('Brillance permanente des couvertures (0 = aucune)',0,100,5,meta.shine==null?60:meta.shine,v=>v+' %');
+  const [dl,idl]=G(()=>dtxt,1,10,.1,3.4,v=>v.toLocaleString('fr-FR')+' s'),[trl,itl]=G('Nombre de tours de lumière',.5,3,.05,meta.fxTurns||1.15,v=>v.toLocaleString('fr-FR')),[shl,ish]=G('Brillance à l’inclinaison des couvertures (0 = aucune)',0,100,5,meta.shine==null?60:meta.shine,v=>v+' %');
   /* les jauges d'un effet n'apparaissent que si l'effet choisi les utilise */
   const sync=()=>{
     const f=fxs.value,sw=f==='sweep',fi=f==='fire';
