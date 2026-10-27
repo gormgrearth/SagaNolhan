@@ -17,7 +17,27 @@ a{color:inherit;text-decoration:none}
 .orn{color:var(--g2);font-size:1.6rem}.intro{max-width:620px;margin:6px auto;color:var(--mut);white-space:pre-line}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px;max-width:1000px;margin:24px auto;padding:0 16px}
 .cv{aspect-ratio:2/3;border:2px solid var(--g2);border-radius:6px;background:linear-gradient(#0b1a45,#0a2a22) center/cover;position:relative;overflow:hidden;box-shadow:0 8px 24px #0008}
-.cv{cursor:zoom-in;transition:transform .35s ease,box-shadow .35s ease}.cv.zoom{transform:scale(1.6);z-index:10;box-shadow:0 16px 40px #000c}.cz{position:absolute;inset:0;background:center/cover no-repeat}
+.cvw{position:relative;cursor:zoom-in;transition:transform .35s ease}.cvw.zoom{transform:scale(1.6);z-index:10}
+.cv{transition:box-shadow .35s ease}.cvw.zoom .cv{box-shadow:0 16px 40px #000c}
+/* effets au zoom d'une couverture (choisis en administration) */
+.fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
+@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
+.fx-sweep{inset:-3px;border-radius:9px;padding:3px;background:conic-gradient(from var(--a),transparent 0deg,transparent 240deg,rgba(255,224,130,.2) 290deg,rgba(255,238,170,.9) 342deg,#fff 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 5px #ffd86b) drop-shadow(0 0 14px #ffb83a)}
+.cvw.zoom .fx-sweep{animation:orbit 1.7s cubic-bezier(.45,0,.25,1) 1 both}
+@keyframes orbit{0%{--a:0deg;opacity:0}8%{opacity:1}86%{opacity:1}100%{--a:360deg;opacity:0}}
+.fx-aura{inset:0;border-radius:8px}
+.fx-aura::before,.fx-aura::after{content:"";position:absolute;inset:0;border-radius:8px;box-shadow:0 0 22px 6px rgba(255,214,102,.6),inset 0 0 18px rgba(255,214,102,.3);animation:aura 2.4s ease-out infinite}
+.fx-aura::after{animation-delay:1.2s}
+@keyframes aura{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.32,1.22);opacity:0}}
+.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 34px 8px rgba(255,214,102,.5),0 16px 40px #000c}
+.fx-fire{inset:0}
+.fx-fire::before{content:"";position:absolute;inset:-12px;border-radius:18px;box-shadow:0 0 26px 8px rgba(255,110,20,.55),0 0 64px 18px rgba(255,60,0,.25);animation:flick .45s ease-in-out infinite alternate}
+@keyframes flick{from{opacity:.7}to{opacity:1}}
+.fx-fire .fl{position:absolute;bottom:-5px;width:18px;margin-left:-9px;border-radius:50% 50% 25% 25%/70% 70% 30% 30%;background:linear-gradient(to top,#ff4d00,#ff9d1a 55%,rgba(255,225,120,0));transform-origin:50% 100%;animation:flame var(--t) ease-in-out infinite alternate;animation-delay:var(--d);opacity:.9}
+@keyframes flame{0%{transform:scaleY(.7) skewX(-8deg)}50%{transform:scaleY(1.15) skewX(6deg)}100%{transform:scaleY(.85) skewX(-4deg)}}
+.fx-fire .em{position:absolute;bottom:0;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(#fff6c0,#ffa020 55%,transparent 72%);box-shadow:0 0 6px 1px #ff8a1a;opacity:0;animation:ember var(--t) ease-out infinite;animation-delay:var(--d)}
+@keyframes ember{0%{transform:translate(0,0) scale(1);opacity:0}12%{opacity:1}100%{transform:translate(var(--dx),-130px) scale(.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
 .cvt{position:absolute;inset:auto 0 0;padding:32px 8px 10px;text-align:center;color:#f6ecd0;background:linear-gradient(transparent,#050c26dd)}.cvt b{display:block;font-size:1.3rem;line-height:1.25}
 .st{text-align:center;margin-top:6px;min-height:1.5em}
 .b{font-size:.8rem;padding:1px 8px;border-radius:9px;border:1px solid var(--g2);color:var(--g2)}
@@ -132,11 +152,23 @@ function home(){
   if(!tomes.length)g.innerHTML='<p class="mut c" style="grid-column:1/-1">Aucun tome publié pour l’instant.</p>';
   tomes.forEach(t=>{
     const c=E('a','card');c.href='#/t/'+t.id;
-    c.innerHTML=`<div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}</div><div class="st">${badge(t)}</div>`;
-    const cv=c.firstChild;setBg(cv.firstChild,t.coverPng||t.cover);zoomable(cv);g.append(c);
+    c.innerHTML=`<div class="cvw"><div class="cv"><div class="cz"></div>${t.coverPng?'':`<div class="cvt"><small>Tome ${esc(t.n)}</small><b class="gold">${esc(t.titre)}</b></div>`}</div></div><div class="st">${badge(t)}</div>`;
+    const w=c.firstChild;setBg(w.firstChild.firstChild,t.coverPng||t.cover);buildFx(w,meta.fx);zoomable(w);g.append(c);
   });
 }
 /* la couverture (cadre + image) s'agrandit quand la souris reste immobile dessus */
+function buildFx(w,fx){
+  if(!['sweep','aura','fire'].includes(fx))return;
+  w.dataset.fx=fx;
+  const d=E('div','fx fx-'+fx),r=Math.random;
+  if(fx==='fire'){
+    let h='';
+    for(let i=0;i<14;i++)h+=`<i class="fl" style="left:${(4+i*7.2).toFixed(1)}%;height:${24+(r()*22|0)}px;--t:${(.35+r()*.4).toFixed(2)}s;--d:-${(r()*.8).toFixed(2)}s"></i>`;
+    for(let i=0;i<16;i++)h+=`<i class="em" style="--x:${(r()*110-5).toFixed(0)}%;--s:${(2+r()*3).toFixed(1)}px;--t:${(1.2+r()*1.4).toFixed(2)}s;--d:-${(r()*2).toFixed(2)}s;--dx:${(r()*44-22)|0}px"></i>`;
+    d.innerHTML=h;
+  }
+  w.append(d);
+}
 function zoomable(w){
   let t,on=0;
   const off=()=>{clearTimeout(t);on=0;w.classList.remove('zoom')};
@@ -247,11 +279,14 @@ function adminHome(){
   const s=E('section','box','<h3>La saga</h3>');
   const [a,ia]=F('Titre de la saga',meta.serie),[b,ib]=F('Auteur',meta.auteur),[c,ic]=F('Édition',meta.edition),[d,id_]=F('Présentation',meta.intro,'textarea'),[ap,iap]=F('À propos / crédits (un paragraphe = une ligne vide)',meta.apropos??APROPOS,'textarea');iap.rows=9;
   const sv=E('button','btn main','Enregistrer');
-  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
+  sv.onclick=async()=>{await setDoc(doc(db,'meta','saga'),{serie:ia.value,auteur:ib.value,edition:ic.value,intro:id_.value,apropos:iap.value,fx:fxs.value,fond:meta.fond||''},{merge:true});await load();toast('Saga enregistrée ✔')};
   const cb=E('input');cb.type='checkbox';cb.checked=true;cb.style.cssText='width:auto;margin-right:6px';
   const cw=E('label','','');cw.append(cb,document.createTextNode('Retirer l’ombre portée de l’illustration à l’import (à cocher avant de choisir le fichier)'));cw.style.fontWeight='400';
   const fw=imgPick('Illustration de fond (page d’accueil de la saga ; format paysage conseillé)',meta,'fond',1920,1920,()=>cb.checked);
-  s.append(a,b,c,d,ap,cw,fw,sv);
+  const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
+  [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Embrasement : flammes et flammèches']].forEach(([v,l])=>fxs.add(new Option(l,v)));
+  fxs.value=meta.fx||'';fxl.append(fxs);
+  s.append(a,b,c,d,ap,cw,fw,fxl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
   const ta=E('textarea'),fi=E('input'),ib2=E('button','btn main','Importer');ta.rows=4;fi.type='file';fi.accept='.json,.txt';
   fi.onchange=async()=>{ta.value=await fi.files[0].text()};ib2.onclick=()=>importJSON(ta.value);im.append(ta,fi,ib2);
