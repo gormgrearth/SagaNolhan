@@ -22,12 +22,12 @@ a{color:inherit;text-decoration:none}
 /* effets au zoom d'une couverture (choisis en administration) */
 .fx{display:none;position:absolute;pointer-events:none}.cvw.zoom .fx{display:block}
 @property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
-.fx-sweep{inset:-3px;border-radius:9px;padding:2px;background:conic-gradient(from var(--a),transparent 0deg,transparent 190deg,rgba(255,214,120,.05) 225deg,rgba(255,220,130,.16) 270deg,rgba(255,232,160,.4) 312deg,rgba(255,246,208,.88) 340deg,rgba(255,250,232,.3) 352deg,transparent 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 3px rgba(255,214,110,.7)) drop-shadow(0 0 9px rgba(255,180,60,.45))}
-.cvw.zoom .fx-sweep{animation:orbit var(--dur,3.4s) cubic-bezier(.45,.05,.55,.95) 1 both,glow var(--dur,3.4s) ease-in-out 1 both}
+.fx-sweep{inset:-4px;border-radius:10px;padding:2px;background:conic-gradient(from var(--a),transparent 0deg,transparent 250deg,rgba(255,190,65,.04) 270deg,rgba(255,205,90,.22) 292deg,rgba(255,235,160,.92) 307deg,rgba(255,255,238,1) 315deg,rgba(255,220,125,.72) 322deg,rgba(255,160,35,.12) 338deg,transparent 350deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);filter:drop-shadow(0 0 2px rgba(255,245,190,.95)) drop-shadow(0 0 6px rgba(255,194,65,.8)) drop-shadow(0 0 13px rgba(255,130,25,.35))}
+.cvw.zoom .fx-sweep{animation:orbit var(--dur,3.4s) cubic-bezier(.35,.05,.25,1) 1 both,glow var(--dur,3.4s) ease-in-out 1 both}
 @keyframes orbit{from{--a:0deg}to{--a:var(--turn,414deg)}}
 @keyframes glow{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
-.fx-aura{inset:0}.fx-aura .wv{position:absolute;inset:0;opacity:0;will-change:transform,opacity}
-.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 30px 6px rgba(255,214,102,.42),0 16px 40px #000c}
+.fx-aura{inset:-24px;border-radius:16px;isolation:isolate}.fx-aura::before,.fx-aura::after{content:"";position:absolute;inset:12px;border-radius:10px;pointer-events:none;opacity:0;filter:blur(18px);background:radial-gradient(ellipse at 50% 48%,rgba(255,228,140,.18),rgba(255,190,65,.15) 42%,rgba(255,145,25,.08) 66%,transparent 76%);animation:auraBreath 4.8s ease-in-out infinite alternate}.fx-aura::after{inset:0;filter:blur(28px);background:radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(255,215,105,.18) 58%,rgba(255,165,45,.1) 72%,transparent 84%);animation-delay:-2.4s}.fx-aura .wv{position:absolute;inset:0;opacity:0;will-change:transform,opacity;mix-blend-mode:screen}@keyframes auraBreath{0%{opacity:.2;transform:scale(.94)}100%{opacity:.9;transform:scale(1.08)}}
+.cvw.zoom[data-fx=aura] .cv{box-shadow:0 0 18px 2px rgba(255,238,170,.42),0 0 42px 10px rgba(255,190,65,.28),0 0 76px 18px rgba(255,145,25,.13),0 16px 40px #000c}
 .fx-fire{inset:-50px}.fx-fire canvas{display:block;width:100%;height:100%}
 .cvw.zoom[data-fx=fire] .cv{box-shadow:0 0 26px 4px rgba(255,100,20,.3),0 16px 40px #000c}
 @media (prefers-reduced-motion:reduce){.cvw.zoom .fx{display:none}}.cz{position:absolute;inset:0;background:center/cover no-repeat}
@@ -158,7 +158,7 @@ function buildFx(w,fx){
   if(fx==='sweep'){w.style.setProperty('--dur',(+meta.fxDur||3.4)+'s');w.style.setProperty('--turn',((+meta.fxTurns||1.15)*360)+'deg')}
   w.append(d);
   if(fx==='aura')auraFx(w,d);
-  if(fx==='fire')fireFx(w,d,+meta.fxDur||12);
+  if(fx==='fire')fireFx(w,d,+meta.fxDur||24);
 }
 /* Aura : vagues aléatoires (forme, étendue, durée, décalage, chevauchement) */
 function auraFx(w,d){
@@ -388,7 +388,7 @@ function adminHome(){
   const fxl=E('label','','Effet au zoom des couvertures (laisser la souris immobile sur une couverture de la saga pour le voir)'),fxs=E('select');
   [['','Aucun'],['sweep','Éclat : un tour de lumière autour de la carte'],['aura','Aura : halo qui rayonne autour de la carte'],['fire','Combustion : la carte se consume lentement depuis un coin']].forEach(([v,l])=>fxs.add(new Option(l,v)));
   fxs.value=meta.fx||'';fxl.append(fxs);
-  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 12 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
+  const [dl,idl]=F('Durée de l’effet en secondes (Éclat : durée du tour ; Combustion : durée jusqu’à la carte entièrement consumée). Vide = valeur par défaut (Éclat 3,4 s ; Combustion 24 s)',meta.fxDur||''),[trl,itl]=F('Éclat : nombre de tours (1,15 par défaut)',meta.fxTurns||'');
   idl.type=itl.type='number';idl.step=itl.step='0.1';idl.min=itl.min='0.5';
   s.append(a,b,c,d,ap,cw,fw,fxl,dl,trl,sv);
   const im=E('section','box','<h3>Importer la saga depuis l’atelier</h3><p class="mut">Collez le texte exporté par l’atelier (« Sauvegarde / transfert ») ou choisissez le fichier. Les tomes sont créés en brouillon.</p>');
